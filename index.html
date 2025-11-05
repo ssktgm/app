@@ -8,10 +8,12 @@
 
     <!-- PWA対応: マニフェストファイル -->
     <link rel="manifest" href="manifest.json">
-    <!-- PWA対応: iOS向けアイコン -->
+    <!-- PWA対応: iOS向け設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="配車調整">
+    <!-- PWA対応: アイコン -->
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    <!-- PWA対応: テーマカラー -->
-    <meta name="theme-color" content="#ffffff"/>
 
     <style>
         /* details[open] summary のスタイル */
@@ -59,29 +61,21 @@
              background-color: #DBEAFE; /* blue-100 */
         }
         .car-header.swap-selected h4 {
-             color: #1D4ED8; /* blue-700 */
+            color: #1D4ED8; /* blue-700 */
+        }
+
+        /* ★ 修正: DB操作ボタンの高さを統一 (py-1.5) */
+        .db-control {
+            padding-top: 0.375rem;    /* py-1.5 */
+            padding-bottom: 0.375rem; /* py-1.5 */
+            height: 2.25rem; /* h-9 (py-1.5 + text-base/leading-6) */
+            box-sizing: border-box; /* 念のため */
+            vertical-align: middle; /* selectとbuttonの縦揃え */
         }
         
-        /* 削除ボタンのスタイル */
-        .delete-button {
-            background-color: #FEE2E2; /* red-100 */
-            color: #B91C1C; /* red-700 */
-            border: 1px solid #FCA5A5; /* red-300 */
-            border-radius: 9999px; /* rounded-full */
-            width: 1.5rem; /* w-6 */
-            height: 1.5rem; /* h-6 */
-            font-weight: bold;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            margin-left: 0.5rem; /* ml-2 */
-            cursor: pointer;
-            line-height: 1;
-            padding-bottom: 2px; /* 微調整 */
-        }
-        .delete-button:hover {
-            background-color: #FECACA; /* red-200 */
-            color: #991B1B; /* red-800 */
+        /* ★ 新規: select要素も高さを合わせる */
+        select.db-control {
+             line-height: 1.5; /* テキストが中央に来るように調整 */
         }
 
     </style>
@@ -92,66 +86,91 @@
         
         <div class="flex justify-between items-center mb-6 border-b pb-2">
             <h1 class="text-3xl font-bold text-gray-800">配車調整アプリ</h1>
-            <div>
-                <a href="./master.html" target="_blank" class="text-sm bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-1 px-3 rounded-lg shadow transition duration-200 mr-2">
-                    マスターデータ管理
-                </a>
-                <a href="./manual.html" target="_blank" class="text-sm bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-lg shadow transition duration-200">
-                    利用マニュアル
-                </a>
-            </div>
+            <a href="./manual.html" target="_blank" class="text-sm bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-lg shadow transition duration-200">
+                利用マニュアル
+            </a>
         </div>
 
-        <!-- データ操作ボタン -->
-        <section class="mb-6 space-y-4">
-            <!-- 状態 保存/復元 -->
-            <div class="bg-white p-4 rounded-lg shadow-sm border">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">作業状態の保存・復元 (DB)</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <button id="save-state-db-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
-                        現在の状態をDBに保存
-                    </button>
-                    
-                    <!-- 状態の読み込みドロップダウン -->
-                    <div class="flex rounded-lg shadow-sm">
-                        <select id="load-state-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        <!-- ★ 修正: データ操作セクション -->
+        <section class="mb-6 bg-white p-4 rounded-lg shadow">
+            <h2 class="text-lg font-semibold text-gray-700 mb-3">データ操作</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+
+                <!-- 状態 保存/復元 (DB) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">作業状態の保存・復元 (DB)</label>
+                    <div class="flex space-x-2">
+                        <button id="save-state-db-button" class="db-control w-1/3 bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 rounded-lg shadow transition duration-200 text-sm">
+                            状態を保存
+                        </button>
+                        <!-- ★ 修正: 状態のドロップダウンを統合 -->
+                        <select id="saved-state-select" class="db-control w-2/3 block p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             <option value="">保存した状態を選択...</option>
                             <!-- JSで描画 -->
                         </select>
-                        <button id="load-state-db-button" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-3 rounded-r-md transition duration-200">
-                            読込
+                    </div>
+                    <div class="flex space-x-2 mt-2">
+                        <!-- ★ 修正: 状態の読み込み・削除ボタン -->
+                        <button id="load-state-db-button" class="db-control w-1/2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-3 rounded-lg shadow transition duration-200 text-sm">
+                            状態を読み込む
+                        </button>
+                        <button id="delete-state-db-button" class="db-control w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold px-3 rounded-lg shadow transition duration-200 text-sm">
+                            状態を削除
                         </button>
                     </div>
+                </div>
 
-                    <!-- 状態の削除ドロップダウン -->
-                    <div class="flex rounded-lg shadow-sm">
-                        <select id="delete-state-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <option value="">削除する状態を選択...</option>
+                <!-- 駐車場データ 保存/復元 (DB) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">駐車場データの保存・復元 (DB)</label>
+                    <div class="flex space-x-2">
+                        <button id="save-parking-db-button" class="db-control w-1/3 bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 rounded-lg shadow transition duration-200 text-sm">
+                            駐車場を保存
+                        </button>
+                        <!-- ★ 修正: 駐車場のドロップダウンを統合 -->
+                        <select id="saved-parking-select" class="db-control w-2/3 block p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="">保存した駐車場を選択...</option>
                             <!-- JSで描画 -->
                         </select>
-                        <button id="delete-state-db-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 rounded-r-md transition duration-200">
-                            削除
+                    </div>
+                    <div class="flex space-x-2 mt-2">
+                        <!-- ★ 修正: 駐車場の読み込み・削除ボタン -->
+                        <button id="load-parking-db-button" class="db-control w-1/2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-3 rounded-lg shadow transition duration-200 text-sm">
+                            駐車場を読み込む
+                        </button>
+                        <button id="delete-parking-db-button" class="db-control w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold px-3 rounded-lg shadow transition duration-200 text-sm">
+                            駐車場を削除
                         </button>
                     </div>
                 </div>
-            </div>
 
-            <!-- ファイル入出力 と DB初期化 -->
-            <div class="bg-white p-4 rounded-lg shadow-sm border">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">ファイル操作・全データ初期化</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <button id="export-state-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
-                        状態を保存 (ファイル)
-                    </button>
-                    <label for="import-state-input" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200 cursor-pointer text-center">
-                        状態を読み込む (ファイル)
-                    </label>
-                    <input type="file" id="import-state-input" accept=".json">
-
-                    <button id="reset-db-button" class="md:col-start-4 bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
-                        キャッシュ全クリア (DB初期化)
-                    </button>
+                <!-- ファイル操作 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ファイル操作 (JSON)</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="export-state-button" class="db-control bg-green-600 hover:bg-green-700 text-white font-bold px-3 rounded-lg shadow transition duration-200 text-sm">
+                            状態を保存 (DL)
+                        </button>
+                        <label for="import-state-input" class="db-control bg-green-200 hover:bg-green-300 text-green-800 font-bold px-3 rounded-lg shadow transition duration-200 cursor-pointer text-center text-sm leading-tight">
+                            状態を読込 (UL)
+                        </label>
+                        <input type="file" id="import-state-input" accept=".json">
+                    </div>
                 </div>
+
+                <!-- 全データ初期化 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">全データ初期化</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <a href="master.html" target="_blank" class="db-control text-center bg-gray-600 hover:bg-gray-700 text-white font-bold px-3 rounded-lg shadow transition duration-200 text-sm">
+                            マスターデータ管理
+                        </a>
+                        <button id="clear-db-button" class="db-control bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-3 rounded-lg shadow transition duration-200 text-sm">
+                            キャッシュ全クリア (DB初期化)
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -168,7 +187,7 @@
                     </button>
                 </div>
                 <div id="participant-list" class="space-y-2 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow">
-                    <p id="participant-list-loading">マスターデータを読み込み中...</p>
+                    <p class="text-gray-500">マスターデータを読み込み中...</p>
                 </div>
             </section>
 
@@ -176,7 +195,7 @@
             <section>
                 <h2 class="text-xl font-semibold text-gray-700 mb-3">2. 車とドライバーを選択</h2>
                 <div id="car-list" class="space-y-3 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow">
-                    <p id="car-list-loading">マスターデータを読み込み中...</p>
+                    <p class="text-gray-500">マスターデータを読み込み中...</p>
                 </div>
             </section>
 
@@ -184,78 +203,43 @@
             <section>
                 <h2 class="text-xl font-semibold text-gray-700 mb-3">3. 別便の人を除外</h2>
                 <div id="exclusion-list" class="space-y-2 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow min-h-[50px]">
-                    <!-- JSで描画 -->
+                    <p class="text-gray-500 text-sm">ステップ1で参加者を選択してください。</p>
                 </div>
             </section>
 
             <!-- ★ 修正: ステップ 4 駐車場情報 -->
             <section class="md:col-span-3">
-                 <h2 class="text-xl font-semibold text-gray-700 mb-3">4. グラウンド・駐車場と割り当て実行</h2>
-                 <div class="bg-white p-4 rounded-lg shadow">
+                 <h2 class="text-xl font-semibold text-gray-700 mb-3">4. グラウンドと駐車場 (割り当て実行)</h2>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-4 rounded-lg shadow">
+                     <!-- 左側: グラウンド名と指定駐車場 -->
+                     <div>
+                        <!-- ★ 新規: グラウンド名 -->
+                        <label for="ground-name" class="block text-sm font-medium text-gray-700">グラウンド名</label>
+                        <input type="text" id="ground-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="例: ○○小学校">
+                        
+                        <label for="parking-designated-name" class="block text-sm font-medium text-gray-700 mt-3">指定駐車場の名称 (例: SF-A面)</label>
+                        <input type="text" id="parking-designated-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="SF-A面">
+                        
+                        <label for="parking-designated-limit" class="block text-sm font-medium text-gray-700 mt-3">台数制限 (半角数字)</label>
+                        <input type="number" id="parking-designated-limit" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="6">
+                        
+                        <label for="parking-designated-memo" class="block text-sm font-medium text-gray-700 mt-3">備考 (例: 地図URL、注意事項)</label>
+                        <textarea id="parking-designated-memo" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="コミュニティプラザテニスコート脇③&#10;https://maps.app.goo.gl/..."></textarea>
+                     </div>
+                     <!-- 右側: それ以外の駐車場と実行ボタン -->
+                     <div>
+                        <label for="parking-other-name" class="block text-sm font-medium text-gray-700">指定以外の駐車場の名称 (例: 丘の上)</label>
+                        <input type="text" id="parking-other-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="丘の上：他応援車はこちらへ">
+                        
+                        <label for="parking-other-memo" class="block text-sm font-medium text-gray-700 mt-3">備考 (例: 地図URL、注意事項)</label>
+                        <textarea id="parking-other-memo" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="コミュニティプラザ奥、テニスコートのさらに奥"></textarea>
                     
-                    <!-- 駐車場DB操作 -->
-                    <div class="mb-6 p-4 bg-gray-50 border rounded-lg">
-                        <h3 class="text-lg font-semibold text-gray-700 mb-2">駐車場データの保存・復元 (DB)</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                             <button id="save-parking-db-button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
-                                 現在の駐車場入力内容を保存
-                             </button>
-                             <!-- 駐車場の読み込み -->
-                             <div class="flex rounded-lg shadow-sm">
-                                 <select id="load-parking-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                     <option value="">保存した駐車場を選択...</option>
-                                     <!-- JSで描画 -->
-                                 </select>
-                                 <button id="load-parking-db-button" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-3 rounded-r-md transition duration-200">
-                                     読込
-                                 </button>
-                             </div>
-                             <!-- 駐車場の削除 -->
-                             <div class="flex rounded-lg shadow-sm">
-                                 <select id="delete-parking-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                     <option value="">削除する駐車場を選択...</option>
-                                     <!-- JSで描画 -->
-                                 </select>
-                                 <button id="delete-parking-db-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 rounded-r-md transition duration-200">
-                                     削除
-                                 </button>
-                             </div>
+                        <div class="mt-12 text-center">
+                            <button id="assign-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
+                                割り当て実行
+                            </button>
                         </div>
-                    </div>
-
-                    <!-- 駐車場入力 -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- 左側: グラウンド名 + 指定駐車場 -->
-                         <div>
-                            <label for="ground-name" class="block text-sm font-medium text-gray-700">グラウンド名 (例: ホームグラウンド)</label>
-                            <input type="text" id="ground-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="SF (ホーム)">
-                            
-                            <hr class="my-4">
-
-                             <label for="parking-designated-name" class="block text-sm font-medium text-gray-700">指定駐車場の名称 (例: SF-A面)</label>
-                             <input type="text" id="parking-designated-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="SF-A面">
-                             
-                             <label for="parking-designated-limit" class="block text-sm font-medium text-gray-700 mt-3">台数制限 (半角数字)</label>
-                             <input type="number" id="parking-designated-limit" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="6">
-                             
-                             <label for="parking-designated-memo" class="block text-sm font-medium text-gray-700 mt-3">備考 (例: 地図URL、注意事項)</label>
-                             <textarea id="parking-designated-memo" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="コミュニティプラザテニスコート脇③&#10;https://maps.app.goo.gl/..."></textarea>
-                         </div>
-                         <!-- 右側: それ以外の駐車場 + 割り当てボタン -->
-                         <div>
-                             <label for="parking-other-name" class="block text-sm font-medium text-gray-700">指定以外の駐車場の名称 (例: 丘の上)</label>
-                             <input type="text" id="parking-other-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="丘の上：他応援車はこちらへ">
-                             
-                             <label for="parking-other-memo" class="block text-sm font-medium text-gray-700 mt-3">備考 (例: 地図URL、注意事項)</label>
-                             <textarea id="parking-other-memo" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="コミュニティプラザ奥、テニスコートのさらに奥"></textarea>
-                         
-                             <div class="mt-12 text-center">
-                                 <button id="assign-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
-                                     割り当て実行
-                                 </button>
-                             </div>
-                         </div>
-                    </div>
+                     </div>
                  </div>
             </section>
 
@@ -272,8 +256,9 @@
                 <!-- メッセージエリア -->
                 <div id="message" class="hidden p-4 mb-4 border rounded-lg" role="alert">
                     <span id="message-text"></span>
-                    <button id="message-close" type="button" class_ ="float-right font-bold text-lg leading-none">&times;</button>
+                    <button id="message-close" type="button" class="float-right font-bold text-lg leading-none">&times;</button>
                 </div>
+
 
                 <!-- テキスト出力エリア -->
                 <div id="text-output-container" class="mb-4 hidden">
@@ -283,7 +268,7 @@
                     </button>
                 </div>
 
-                <!-- 割り当て結果 -->
+                <!-- 修正: results の中身はJSで駐車場セクションごと描画する -->
                 <div id="results" class="space-y-6"> 
                     <p id="results-placeholder" class="text-gray-500 text-sm bg-white p-4 rounded-lg shadow min-h-[50px]">ステップ4の「割り当て実行」を押してください。</p>
                 </div>
@@ -293,27 +278,15 @@
 
     </div>
 
-    <!-- PWAインストールボタン（非表示） -->
-    <div id="install-container" class="fixed bottom-4 right-4 hidden">
-        <button id="install-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg">
-            アプリをインストール
-        </button>
-    </div>
-
-    <!-- データベース(db.js)の読み込み -->
-    <script src="db.js"></script>
-
     <script type="module">
+        // --- DB ---
+        import * as db from './db.js';
+        
         // --- レイアウト列数の定義 ---
         const LAYOUT_COLUMNS = 3; 
-        
-        // --- 状態保存の上限 ---
-        const MAX_SAVED_STATES = 25;
-        const MAX_SAVED_PARKING = 50;
 
-        // --- 事前定義データ (DB初期化用) ---
+        // --- 事前定義データ (DBが空の場合の初期データ) ---
         
-        // DBが空の場合の初期マスターデータ
         const DEFAULT_FAMILIES = [
             { familyName: '小高家', order: 1, members: [ { id: 'p1', name: '斗愛', type: '選手', isFlagTarget: true, data: { grade: '5年', school: '東小', other: '', memo: '' } }, { id: 'p2', name: '小高監督', type: '保護者', data: { memo: '' } }, { id: 'p3', name: '小高母', type: '保護者', data: { memo: '' } }, { id: 'p22', name: '愛之佑', type: '選手', isFlagTarget: true, data: { grade: '3年', school: '東小', other: '', memo: '' } } ] },
             { familyName: '難波家', order: 2, members: [ { id: 'p4', name: '諒成', type: '選手', isFlagTarget: true, data: { grade: '5年', school: 'x小', other: '', memo: '' } }, { id: 'p5', name: '難波父', type: '保護者', data: { memo: '' } } ] },
@@ -348,7 +321,7 @@
             { familyName: 'スタッフ・個人', order: 19, members: [ { id: 'p94', name: '渡邉会長', type: 'その他', data: { memo: '' } }, { id: 'p99', name: '木村代表', type: 'その他', data: { memo: '' } }, { id: 'p98', name: '吉田さん', type: 'その他', data: { memo: '' } }, { id: 'p97', name: '前田さん', type: 'その他', data: { memo: '' } }, { id: 'p96', name: '中田さん', type: 'その他', data: { memo: '' } }, { id: 'p95', name: '渡辺さん', type: 'その他', data: { memo: '' } }, ] }
         ];
 
-        // ★修復: 車データを16件に戻す
+        // ★ 修正: デフォルトの車データを16件に戻す
         const DEFAULT_AVAILABLE_CARS_INFO = [
             { id: 'c1', name: '小高カー', familyName: '小高家', baseCapacity: 6, order: 1 }, 
             { id: 'c2', name: '難波カー', familyName: '難波家', baseCapacity: 7, order: 2 }, 
@@ -367,20 +340,13 @@
             { id: 'c15', name: '古川カー', familyName: '古川家', baseCapacity: 8, order: 15 }, 
             { id: 'c16', name: 'コーチカー', familyName: 'スタッフ・個人', baseCapacity: 5, order: 16 }
         ];
-        
-        // ★新規: 駐車場データもDBで管理
-        const DEFAULT_PARKING_INFO = [
-            { id: 'p_default_1', timestamp: Date.now(), name: 'ホーム (SF)', groundName: 'SF (ホーム)', designatedName: 'SF-A面', limit: 6, designatedMemo: 'コミュニティプラザテニスコート脇③', otherName: '丘の上', otherMemo: 'コミュニティプラザ奥、テニスコートのさらに奥' },
-            { id: 'p_default_2', timestamp: Date.now() - 1000, name: '流山河川敷', groundName: '流山河川敷', designatedName: '河川敷駐車場', limit: 999, designatedMemo: '地図URL: https://...', otherName: '近隣コインP', otherMemo: '徒歩5分' }
-        ];
 
-
-        // --- グローバル変数 (マスターデータ) ---
+        // --- マスターデータ変数 ---
         let FAMILIES = [];
         let AVAILABLE_CARS_INFO = [];
         let ALL_PARTICIPANTS_FLAT = [];
 
-        // --- 状態変数 (作業データ) ---
+        // --- 状態変数 ---
         let selectedParticipantIds = new Set();
         let selectedCarIds = new Set();
         let selectedDrivers = new Map(); // carId -> driverId
@@ -388,13 +354,12 @@
         let excludedParticipantIds = new Set();
         let participantData = new Map(); // participantId -> { grade, school, other, memo }
         
-        // ★修正: 駐車場データは groundName を含むオブジェクトに変更
+        // ★ 修正: parkingInfo に groundName を追加
         let parkingInfo = {
             groundName: '',
             designated: { name: '', limit: 0, memo: '' },
             other: { name: '', memo: '' }
         };
-        
         let currentAssignments = []; // { id, name, ..., assignedParking: 'designated' | 'other' | 'excluded' }
         
         let selectedSwapItems = {
@@ -405,9 +370,7 @@
 
         // --- DOM参照 ---
         const participantListEl = document.getElementById('participant-list');
-        const participantListLoadingEl = document.getElementById('participant-list-loading');
         const carListEl = document.getElementById('car-list');
-        const carListLoadingEl = document.getElementById('car-list-loading');
         const exclusionListEl = document.getElementById('exclusion-list');
         const resultsEl = document.getElementById('results');
         const assignButton = document.getElementById('assign-button');
@@ -415,46 +378,35 @@
         const messageText = document.getElementById('message-text');
         const messageClose = document.getElementById('message-close');
         
-        // ファイル操作
-        const exportButton = document.getElementById('export-state-button');
-        const importInput = document.getElementById('import-state-input');
+        const exportStateButton = document.getElementById('export-state-button');
+        const importStateInput = document.getElementById('import-state-input');
         
-        // 状態DB操作
-        const saveStateDbButton = document.getElementById('save-state-db-button');
-        const loadStateDbSelect = document.getElementById('load-state-db-select');
-        const loadStateDbButton = document.getElementById('load-state-db-button');
-        const deleteStateDbSelect = document.getElementById('delete-state-db-select');
-        const deleteStateDbButton = document.getElementById('delete-state-db-button');
-
-        // 駐車場DB操作
-        const saveParkingDbButton = document.getElementById('save-parking-db-button');
-        const loadParkingDbSelect = document.getElementById('load-parking-db-select');
-        const loadParkingDbButton = document.getElementById('load-parking-db-button');
-        const deleteParkingDbSelect = document.getElementById('delete-parking-db-select');
-        const deleteParkingDbButton = document.getElementById('delete-parking-db-button');
-        
-        // テキスト出力
         const showTextOutputButton = document.getElementById('show-text-output-button');
         const textOutputContainer = document.getElementById('text-output-container');
         const textOutputEl = document.getElementById('text-output');
         const copyTextOutputButton = document.getElementById('copy-text-output-button');
         const toggleDetailsButton = document.getElementById('toggle-details-button');
         
-        // 駐車場入力
-        const groundNameEl = document.getElementById('ground-name'); // ★追加
+        // ★ 修正: 駐車場関連のDOM
+        const groundNameEl = document.getElementById('ground-name');
         const parkingDesignatedNameEl = document.getElementById('parking-designated-name');
         const parkingDesignatedLimitEl = document.getElementById('parking-designated-limit');
         const parkingDesignatedMemoEl = document.getElementById('parking-designated-memo');
         const parkingOtherNameEl = document.getElementById('parking-other-name');
         const parkingOtherMemoEl = document.getElementById('parking-other-memo');
-        
-        // DB初期化
-        const resetDbButton = document.getElementById('reset-db-button');
 
-        // PWAインストール
-        const installContainer = document.getElementById('install-container');
-        const installButton = document.getElementById('install-button');
-        let deferredPrompt = null;
+        // ★ 新規: DB操作ボタン
+        const saveStateDbButton = document.getElementById('save-state-db-button');
+        const loadStateDbButton = document.getElementById('load-state-db-button');
+        const deleteStateDbButton = document.getElementById('delete-state-db-button');
+        const savedStateSelect = document.getElementById('saved-state-select');
+
+        const saveParkingDbButton = document.getElementById('save-parking-db-button');
+        const loadParkingDbButton = document.getElementById('load-parking-db-button');
+        const deleteParkingDbButton = document.getElementById('delete-parking-db-button');
+        const savedParkingSelect = document.getElementById('saved-parking-select');
+        
+        const clearDbButton = document.getElementById('clear-db-button');
 
 
         // --- 初期化処理 ---
@@ -476,27 +428,24 @@
             updateLayouts();
             window.addEventListener('resize', updateLayouts); 
 
-            // ★ DBからマスターデータを読み込む
+            // ★ 修正: DBからマスターデータを読み込む
             try {
-                await loadMasterData();
-            } catch (error) {
-                console.error("マスターデータの読み込みに失敗しました:", error);
-                participantListLoadingEl.textContent = "エラー: マスターデータの読み込みに失敗しました。";
-                carListLoadingEl.textContent = "エラー: マスターデータの読み込みに失敗しました。";
-                showMessage("データベースの読み込みに失敗しました。マニュアルに従ってマスターデータをインポートするか、「キャッシュ全クリア」を試してください。", "error");
-                return; // マスターデータがないと続行不可
+                await loadMasterDataFromDB();
+                initializeParticipantData(); 
+                renderParticipantList();
+                renderCarList();
+                renderExclusionList();
+            } catch (err) {
+                console.error("DBからのマスターデータ読み込みに失敗:", err);
+                participantListEl.innerHTML = '<p class="text-red-500">エラー: マスターデータの読み込みに失敗しました。</p>';
+                carListEl.innerHTML = '<p class="text-red-500">エラー: マスターデータの読み込みに失敗しました。</p>';
+                showMessage('マスターデータの読み込みに失敗しました。DBが破損している可能性があります。', 'error');
             }
-
-            initializeParticipantData(); 
-            renderParticipantList();
-            renderCarList();
-            renderExclusionList();
             
-            // ★ DBから保存済みデータを読み込む
-            await loadSavedStatesFromDB();
-            await loadSavedParkingFromDB();
+            // ★ 新規: 保存済みデータを読み込む
+            await loadSavedStatesList();
+            await loadSavedParkingList();
             
-            // イベントリスナー登録
             participantListEl.addEventListener('change', handleParticipantChange);
             participantListEl.addEventListener('input', handleParticipantDataInput); 
             participantListEl.addEventListener('click', handleFamilyCheck); 
@@ -507,86 +456,49 @@
 
             resultsEl.addEventListener('change', handleSwapCheckboxChange);
             
-            exportButton.addEventListener('click', handleExportState);
-            importInput.addEventListener('change', handleImportState);
+            exportStateButton.addEventListener('click', handleExportState);
+            importStateInput.addEventListener('change', handleImportState);
             showTextOutputButton.addEventListener('click', handleShowTextOutput);
             copyTextOutputButton.addEventListener('click', handleCopyTextOutput);
             toggleDetailsButton.addEventListener('click', handleToggleDetails);
 
-            // DB操作
+            // ★ 新規: DB操作ボタンのイベントリスナ
             saveStateDbButton.addEventListener('click', handleSaveStateToDB);
             loadStateDbButton.addEventListener('click', handleLoadStateFromDB);
             deleteStateDbButton.addEventListener('click', handleDeleteStateFromDB);
-            
+
             saveParkingDbButton.addEventListener('click', handleSaveParkingToDB);
             loadParkingDbButton.addEventListener('click', handleLoadParkingFromDB);
             deleteParkingDbButton.addEventListener('click', handleDeleteParkingFromDB);
 
-            resetDbButton.addEventListener('click', handleResetDB);
-            
-            // PWAインストール
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                installContainer.classList.remove('hidden');
-            });
+            clearDbButton.addEventListener('click', handleClearDB);
 
-            installButton.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    console.log(`User response to the install prompt: ${outcome}`);
-                    deferredPrompt = null;
-                    installContainer.classList.add('hidden');
-                }
-            });
-            
-            // PWA サービスワーカー登録
+            // PWAサービスワーカーの登録
             if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('sw.js')
-                        .then(registration => {
-                            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                        })
-                        .catch(err => {
-                            console.log('ServiceWorker registration failed: ', err);
-                        });
-                });
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered successfully:', reg))
+                    .catch(err => console.error('Service Worker registration failed:', err));
             }
         });
-        
+
         // ★ 新規: DBからマスターデータを読み込む
-        async function loadMasterData() {
-            try {
-                let families = await db.getAllFamilies();
-                let cars = await db.getAllCars();
+        async function loadMasterDataFromDB() {
+            let families = await db.getAllFamilies();
+            let cars = await db.getAllCars();
 
-                // DBが空の場合、デフォルトデータを挿入
-                if (families.length === 0 && cars.length === 0) {
-                    console.log("DBが空です。デフォルトマスターデータを挿入します。");
-                    await db.bulkAddFamilies(DEFAULT_FAMILIES);
-                    await db.bulkAddCars(DEFAULT_AVAILABLE_CARS_INFO);
-                    
-                    // ★ 駐車場データも初期化
-                    await db.clearAllParking();
-                    await db.bulkAddParking(DEFAULT_PARKING_INFO);
-                    
-                    families = await db.getAllFamilies();
-                    cars = await db.getAllCars();
-                }
-                
-                // order でソート
-                FAMILIES = families.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-                AVAILABLE_CARS_INFO = cars.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-                
-                ALL_PARTICIPANTS_FLAT = FAMILIES.flatMap(f => f.members);
-                
-                console.log("マスターデータをDBから読み込みました。", FAMILIES, AVAILABLE_CARS_INFO);
-
-            } catch (error) {
-                console.error("マスターデータの読み込みに失敗しました:", error);
-                throw new Error("DBからのマスターデータ読み込みに失敗しました。");
+            // DBが空ならデフォルトデータを投入
+            if (families.length === 0 && cars.length === 0) {
+                console.log("DBが空です。デフォルトデータを投入します。");
+                await db.bulkAddFamilies(DEFAULT_FAMILIES);
+                await db.bulkAddCars(DEFAULT_AVAILABLE_CARS_INFO);
+                families = await db.getAllFamilies();
+                cars = await db.getAllCars();
             }
+            
+            // 読み込んだデータをソートしてグローバル変数にセット
+            FAMILIES = families.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+            AVAILABLE_CARS_INFO = cars.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+            ALL_PARTICIPANTS_FLAT = FAMILIES.flatMap(f => f.members);
         }
 
         // 参加者データ（備考含む）を初期化
@@ -599,6 +511,7 @@
                         ...(member.data || {}) 
                     };
                     
+                    // ★ 修正: 「同乗優先」(isFlagTarget) でない場合、項目をクリア
                     if (!member.isFlagTarget) {
                         defaultData.grade = '';
                         defaultData.school = '';
@@ -612,11 +525,11 @@
         // ステップ1: 参加者リストを描画
         function renderParticipantList() {
             if (FAMILIES.length === 0) {
-                participantListLoadingEl.textContent = "マスターデータがありません。マスターデータ管理ページからインポートしてください。";
-                return;
+                 participantListEl.innerHTML = '<p class="text-gray-500">マスターデータがありません。<a href="master.html" class="text-blue-600 underline" target="_blank">マスターデータ管理</a>でデータを登録してください。</p>';
+                 return;
             }
+
             participantListEl.innerHTML = '';
-            
             FAMILIES.forEach(family => {
                 const details = document.createElement('details');
                 details.className = 'bg-gray-50 rounded border';
@@ -662,7 +575,7 @@
                     dataDiv.id = `data-inputs-${p.id}`; 
                     dataDiv.className = `ml-8 mt-1.5 grid grid-cols-4 gap-2 ${isChecked ? '' : 'opacity-50'}`;
                     
-                    // ★ 修正: 「同乗優先」がオン(isFlagTarget: true)の場合のみ入力欄を表示
+                    // ★ 修正: 「同乗優先」(isFlagTarget)
                     if (p.isFlagTarget) {
                         dataDiv.innerHTML = `
                             <input type="text" data-id="${p.id}" data-type="grade" value="${data.grade || ''}" placeholder="学年" class="w-full text-sm p-1 border rounded shadow-sm" ${isChecked ? '' : 'disabled'}>
@@ -708,22 +621,22 @@
         // ステップ2: 車リストを描画
         function renderCarList() {
             if (AVAILABLE_CARS_INFO.length === 0) {
-                 carListLoadingEl.textContent = "マスターデータがありません。マスターデータ管理ページからインポートしてください。";
+                 carListEl.innerHTML = '<p class="text-gray-500">マスターデータがありません。<a href="master.html" class="text-blue-600 underline" target="_blank">マスターデータ管理</a>でデータを登録してください。</p>';
                  return;
             }
+
             carListEl.innerHTML = '';
-            
             AVAILABLE_CARS_INFO.forEach(car => {
                 const family = FAMILIES.find(f => f.familyName === car.familyName);
                 
-                // ★ 修正: ドライバー候補から選手と兄弟を除外
+                // 修正: ドライバー候補から選手と兄弟を除外
                 const driverCandidates = family ? family.members : ALL_PARTICIPANTS_FLAT;
                 const driverOptions = driverCandidates.filter(p => p.type !== '選手' && p.type !== '兄弟');
                 
                 const isChecked = selectedCarIds.has(car.id);
                 let defaultDriverId = '';
                 if (family) {
-                    // ★ 修正: フィルタリングされた候補からデフォルトドライバーを探す
+                    // 修正: フィルタリングされた候補からデフォルトドライバーを探す
                     const father = driverOptions.find(m => m.type === '保護者' && (m.name.includes('父') || m.name.includes('監督')));
                     const mother = driverOptions.find(m => m.type === '保護者' && m.name.includes('母'));
                     if (father) defaultDriverId = father.id;
@@ -796,12 +709,9 @@
             const otherCars = assignments.filter(c => c.assignedParking === 'other');
             const excludedCars = assignments.filter(c => c.id === 'excluded-car'); // 別便
 
-            // 0. グラウンド名
+            // 0. グラウンド情報
             if (parkingData.groundName) {
-                const groundTitle = document.createElement('h2');
-                groundTitle.className = "text-2xl font-bold text-gray-800 mb-2";
-                groundTitle.textContent = `グラウンド: ${parkingData.groundName}`;
-                resultsEl.appendChild(groundTitle);
+                 resultsEl.innerHTML += `<h2 class="text-2xl font-bold text-gray-800 mb-2">${parkingData.groundName}</h2>`;
             }
 
             // 1. 指定駐車場セクション
@@ -814,7 +724,7 @@
             }
         }
         
-        // ★ 修正: 駐車場セクションを描画
+        // ★ 新関数: 駐車場セクションを描画
         function createParkingSection(type, info, cars) {
             const section = document.createElement('div');
             section.className = 'bg-white rounded-lg shadow-inner border border-gray-200 p-4';
@@ -832,7 +742,7 @@
             
             section.innerHTML = `
                 <h3 class="text-lg font-semibold text-gray-800 mb-1">${titleHtml}</h3>
-                <p class="text-sm text-gray-600 mb-4 ml-4">${memoHtml}</p>
+                <p class="text-sm text-gray-600 mb-4 ml-4 whitespace-pre-line">${info.memo}</p>
                 <div class="results-grid-layout">
                     ${cars.map(car => createCarCardHtml(car)).join('')}
                 </div>
@@ -840,7 +750,7 @@
             return section;
         }
 
-        // ★ 修正: 車カードのHTMLを生成
+        // ★ 新関数: 車カードのHTMLを生成
         function createCarCardHtml(car) {
             const cardId = `car-result-${car.id}`;
             let headerHtml = '';
@@ -855,7 +765,6 @@
                 membersHtml = car.members.map((p, i) => { 
                     if (!p) return ''; // 万が一 null があってもスキップ
                     const memo = (participantData.get(p.id)?.memo || '').trim();
-                    // ★ 修正: isFlagTarget と data を参照
                     const flags = (p.isFlagTarget && (p.grade || p.school || p.other)) ? [p.grade, p.school, p.other].filter(Boolean).join(' ') : '';
                     const id = `seat-${car.id}-${p.id}`;
                     return `<li class="p-2 bg-gray-100 rounded shadow-sm flex items-center justify-between">
@@ -916,7 +825,6 @@
                     
                     if (p) {
                         const memo = (participantData.get(p.id)?.memo || '').trim();
-                        // ★ 修正: isFlagTarget と data を参照
                         const flags = (p.isFlagTarget && (p.grade || p.school || p.other)) ? [p.grade, p.school, p.other].filter(Boolean).join(' ') : '';
                         const seatId = `seat-${car.id}-${p.id}`;
                         membersHtml += `<li class="p-2 bg-gray-100 rounded shadow-sm flex items-center justify-between">
@@ -1101,7 +1009,7 @@
 
             // 5. 空きを詰める + D昇格
             [carA, carB].filter((car, index, self) => car && self.findIndex(c => c.id === car.id) === index)
-                .forEach(car => {
+                 .forEach(car => {
                      if (car.id !== 'excluded-car') {
                          car.members = car.members.filter(p => p !== null); 
                          if (!car.driver && car.members.length > 0) {
@@ -1110,8 +1018,8 @@
                          while(car.members.length < car.capacity) {
                              car.members.push(null);
                          }
-                    }
-                });
+                     }
+                 });
 
             hideMessage();
             updateTextOutput();
@@ -1159,28 +1067,26 @@
              }
         }
 
-
         // --- 他のイベントハンドラ ---
         function handleParticipantChange(e) { 
-             const target = e.target; if (target.type === 'checkbox' && target.dataset.action === 'select-participant') { const id = target.dataset.id; const dataEl = document.getElementById(`data-inputs-${id}`); if (target.checked) { selectedParticipantIds.add(id); if (dataEl) { dataEl.classList.remove('opacity-50'); dataEl.querySelectorAll('input, textarea').forEach(input => input.disabled = false); } } else { selectedParticipantIds.delete(id); if (dataEl) { dataEl.classList.add('opacity-50'); dataEl.querySelectorAll('input, textarea').forEach(input => input.disabled = true); } if (excludedParticipantIds.has(id)) { excludedParticipantIds.delete(id); } } renderExclusionList(); }
+            const target = e.target; if (target.type === 'checkbox' && target.dataset.action === 'select-participant') { const id = target.dataset.id; const dataEl = document.getElementById(`data-inputs-${id}`); if (target.checked) { selectedParticipantIds.add(id); if (dataEl) { dataEl.classList.remove('opacity-50'); dataEl.querySelectorAll('input, textarea').forEach(input => input.disabled = false); } } else { selectedParticipantIds.delete(id); if (dataEl) { dataEl.classList.add('opacity-50'); dataEl.querySelectorAll('input, textarea').forEach(input => input.disabled = true); } if (excludedParticipantIds.has(id)) { excludedParticipantIds.delete(id); } } renderExclusionList(); }
         }
         function handleParticipantDataInput(e) { 
-             const target = e.target; if (target.dataset.id && target.dataset.type) { const id = target.dataset.id; const type = target.dataset.type; const value = target.value; const data = participantData.get(id) || { grade: '', school: '', other: '', memo: '' }; data[type] = value; participantData.set(id, data); }
+            const target = e.target; if (target.dataset.id && target.dataset.type) { const id = target.dataset.id; const type = target.dataset.type; const value = target.value; const data = participantData.get(id) || { grade: '', school: '', other: '', memo: '' }; data[type] = value; participantData.set(id, data); }
         }
         function handleCarChange(e) { 
-             const target = e.target; const carId = target.closest('[data-car-id]')?.dataset.carId; if (!carId) return; const action = target.dataset.action; if (action === 'select-car') { if (target.checked) { selectedCarIds.add(carId); document.getElementById(`car-options-${carId}`)?.classList.remove('hidden'); } else { selectedCarIds.delete(carId); selectedLuggage.delete(carId); document.getElementById(`car-options-${carId}`)?.classList.add('hidden'); } } else if (action === 'select-driver') { if (target.value) { selectedDrivers.set(carId, target.value); } else { selectedDrivers.delete(carId); } } else if (action === 'select-luggage') { if (target.checked) { selectedLuggage.add(carId); } else { selectedLuggage.delete(carId); } }
+            const target = e.target; const carId = target.closest('[data-car-id]')?.dataset.carId; if (!carId) return; const action = target.dataset.action; if (action === 'select-car') { if (target.checked) { selectedCarIds.add(carId); document.getElementById(`car-options-${carId}`)?.classList.remove('hidden'); } else { selectedCarIds.delete(carId); selectedLuggage.delete(carId); document.getElementById(`car-options-${carId}`)?.classList.add('hidden'); } } else if (action === 'select-driver') { if (target.value) { selectedDrivers.set(carId, target.value); } else { selectedDrivers.delete(carId); } } else if (action === 'select-luggage') { if (target.checked) { selectedLuggage.add(carId); } else { selectedLuggage.delete(carId); } }
         }
         function handleExclusionChange(e) { 
-             const target = e.target; if (target.type === 'checkbox' && target.dataset.action === 'exclude-participant') { const id = target.dataset.id; if (target.checked) { excludedParticipantIds.add(id); } else { excludedParticipantIds.delete(id); } }
+            const target = e.target; if (target.type === 'checkbox' && target.dataset.action === 'exclude-participant') { const id = target.dataset.id; if (target.checked) { excludedParticipantIds.add(id); } else { excludedParticipantIds.delete(id); } }
         }
         
-        // ★ 修正: 駐車場データ取得を更新
+        // ★ 修正: 割り当て実行 (駐車場情報を含む)
         function handleAssignment() { 
              if (selectedCarIds.size === 0) { showMessage('ステップ2で車を1台以上選択してください。', 'error'); return; }
              
-             // ★ 駐車場データをグローバル変数にセット
              parkingInfo = {
-                 groundName: groundNameEl.value || '', // ★ グラウンド名
+                 groundName: groundNameEl.value, // ★ グラウンド名を追加
                  designated: {
                      name: parkingDesignatedNameEl.value || '指定駐車場',
                      limit: parseInt(parkingDesignatedLimitEl.value, 10) || 999, 
@@ -1233,413 +1139,375 @@
              updateTextOutput();
         }
         function allocateParticipants(participants, cars, driverMap){ 
-             let assignments = cars.map(car => ({ ...car, driver: driverMap.get(car.id) || null, members: [] })); if (participants.length === 0) return assignments; let remainingParticipants = [...participants]; const typePriority = { '保護者': 1, '兄弟': 2, '選手': 3, 'その他': 4 }; assignments.forEach(car => { if (!car.driver || !car.familyName || car.driver.familyName !== car.familyName) return; let familyMembers = remainingParticipants .filter(p => p.familyName === car.familyName) .sort((a, b) => (typePriority[a.type] || 9) - (typePriority[b.type] || 9)); familyMembers.forEach(member => { if (car.members.length < car.capacity) { car.members.push(member); remainingParticipants = remainingParticipants.filter(p => p.id !== member.id); } }); }); function getFlagMatchScore(pA, pB) { if (!pA || !pB || !pA.isFlagTarget || !pB.isFlagTarget) return 0; let score = 0; if (pA.grade && pA.grade === pB.grade) score++; if (pA.school && pA.school === pB.school) score++; if (pA.other && pA.other === pB.other) score++; return score; } let participantsToProcess = remainingParticipants.sort((a, b) => (a.isFlagTarget !== b.isFlagTarget) ? (a.isFlagTarget ? -1 : 1) : Math.random() - 0.5); let stillRemaining = []; participantsToProcess.forEach(participant => { let bestCarCandidates = []; let maxScore = 0; assignments.forEach(car => { if (car.members.length >= car.capacity) return; let currentCarScore = car.members.filter(p => p !== null).reduce((score, member) => score + getFlagMatchScore(participant, member), 0); if (currentCarScore > maxScore) { maxScore = currentCarScore; bestCarCandidates = [car]; } else if (currentCarScore > 0 && currentCarScore === maxScore) { bestCarCandidates.push(car); } }); if (bestCarCandidates.length > 0) { const bestCar = bestCarCandidates[Math.floor(Math.random() * bestCarCandidates.length)]; bestCar.members.push(participant); } else { stillRemaining.push(participant); } }); if (stillRemaining.length > 0) { let carsWithVacancy = assignments.map(car => ({ carRef: car, vacancy: car.capacity - car.members.filter(p => p !== null).length })).filter(c => c.vacancy > 0).sort((a, b) => b.vacancy - a.vacancy); let carIndex = 0; stillRemaining.forEach(participant => { if (carsWithVacancy.length === 0) return; let assigned = false, initialCarIndex = carIndex; while(!assigned) { if (carsWithVacancy.length === 0) break; carIndex = carIndex % carsWithVacancy.length; const targetCarInfo = carsWithVacancy[carIndex]; if (targetCarInfo.carRef.members.filter(p => p !== null).length < targetCarInfo.carRef.capacity) { targetCarInfo.carRef.members.push(participant); targetCarInfo.vacancy--; assigned = true; if (targetCarInfo.vacancy <= 0) carsWithVacancy.splice(carIndex, 1); else carIndex++; } else { carsWithVacancy.splice(carIndex, 1); } if (carsWithVacancy.length > 0 && carIndex % carsWithVacancy.length === initialCarIndex && !assigned) break; } }); } 
-             
-             assignments.forEach(car => {
-                 car.members = car.members.filter(p => p !== null); 
-                 while (car.members.length < car.capacity) {
-                     car.members.push(null);
-                 }
-             });
-             
-             return assignments;
+            let assignments = cars.map(car => ({ ...car, driver: driverMap.get(car.id) || null, members: [] })); if (participants.length === 0) return assignments; let remainingParticipants = [...participants]; const typePriority = { '保護者': 1, '兄弟': 2, '選手': 3, 'その他': 4 }; assignments.forEach(car => { if (!car.driver || !car.familyName || car.driver.familyName !== car.familyName) return; let familyMembers = remainingParticipants .filter(p => p.familyName === car.familyName) .sort((a, b) => (typePriority[a.type] || 9) - (typePriority[b.type] || 9)); familyMembers.forEach(member => { if (car.members.length < car.capacity) { car.members.push(member); remainingParticipants = remainingParticipants.filter(p => p.id !== member.id); } }); }); function getFlagMatchScore(pA, pB) { if (!pA || !pB || !pA.isFlagTarget || !pB.isFlagTarget) return 0; let score = 0; if (pA.grade && pA.grade === pB.grade) score++; if (pA.school && pA.school === pB.school) score++; if (pA.other && pA.other === pB.other) score++; return score; } let participantsToProcess = remainingParticipants.sort((a, b) => (a.isFlagTarget !== b.isFlagTarget) ? (a.isFlagTarget ? -1 : 1) : Math.random() - 0.5); let stillRemaining = []; participantsToProcess.forEach(participant => { let bestCarCandidates = []; let maxScore = 0; assignments.forEach(car => { if (car.members.length >= car.capacity) return; let currentCarScore = car.members.filter(p => p !== null).reduce((score, member) => score + getFlagMatchScore(participant, member), 0); if (currentCarScore > maxScore) { maxScore = currentCarScore; bestCarCandidates = [car]; } else if (currentCarScore > 0 && currentCarScore === maxScore) { bestCarCandidates.push(car); } }); if (bestCarCandidates.length > 0) { const bestCar = bestCarCandidates[Math.floor(Math.random() * bestCarCandidates.length)]; bestCar.members.push(participant); } else { stillRemaining.push(participant); } }); if (stillRemaining.length > 0) { let carsWithVacancy = assignments.map(car => ({ carRef: car, vacancy: car.capacity - car.members.filter(p => p !== null).length })).filter(c => c.vacancy > 0).sort((a, b) => b.vacancy - a.vacancy); let carIndex = 0; stillRemaining.forEach(participant => { if (carsWithVacancy.length === 0) return; let assigned = false, initialCarIndex = carIndex; while(!assigned) { if (carsWithVacancy.length === 0) break; carIndex = carIndex % carsWithVacancy.length; const targetCarInfo = carsWithVacancy[carIndex]; if (targetCarInfo.carRef.members.filter(p => p !== null).length < targetCarInfo.carRef.capacity) { targetCarInfo.carRef.members.push(participant); targetCarInfo.vacancy--; assigned = true; if (targetCarInfo.vacancy <= 0) carsWithVacancy.splice(carIndex, 1); else carIndex++; } else { carsWithVacancy.splice(carIndex, 1); } if (carsWithVacancy.length > 0 && carIndex % carsWithVacancy.length === initialCarIndex && !assigned) break; } }); } 
+            
+            assignments.forEach(car => {
+                car.members = car.members.filter(p => p !== null); 
+                while (car.members.length < car.capacity) {
+                    car.members.push(null);
+                }
+            });
+            
+            return assignments;
         }
         function handleToggleDetails(){ 
-             const detailsElements = participantListEl.querySelectorAll('details'); const shouldOpen = toggleDetailsButton.textContent === 'すべて開く'; detailsElements.forEach(details => { details.open = shouldOpen; }); toggleDetailsButton.textContent = shouldOpen ? 'すべて閉じる' : 'すべて開く';
+            const detailsElements = participantListEl.querySelectorAll('details'); const shouldOpen = toggleDetailsButton.textContent === 'すべて開く'; detailsElements.forEach(details => { details.open = shouldOpen; }); toggleDetailsButton.textContent = shouldOpen ? 'すべて閉じる' : 'すべて開く';
         }
         function showMessage(message, type = 'info'){ 
-             messageText.innerHTML = message; messageContainer.className = 'p-4 mb-4 border rounded-lg'; 
-             switch(type) {
-                 case 'error': messageContainer.classList.add('bg-red-100', 'border-red-400', 'text-red-700'); break;
-                 case 'warning': messageContainer.classList.add('bg-yellow-100', 'border-yellow-400', 'text-yellow-700'); break;
-                 default: messageContainer.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
-             }
-             messageContainer.classList.remove('hidden');
+            messageText.innerHTML = message; messageContainer.className = 'p-4 mb-4 border rounded-lg'; 
+            switch(type) {
+                case 'error': messageContainer.classList.add('bg-red-100', 'border-red-400', 'text-red-700'); break;
+                case 'warning': messageContainer.classList.add('bg-yellow-100', 'border-yellow-400', 'text-yellow-700'); break;
+                default: messageContainer.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
+            }
+            messageContainer.classList.remove('hidden');
         }
         function hideMessage(){ 
-             messageContainer.classList.add('hidden');
+            messageContainer.classList.add('hidden');
         }
-        
-        // ★ 修正: 駐車場データ取得を更新
-        function getCurrentState(){ 
-             return { 
-                 selectedParticipantIds: Array.from(selectedParticipantIds), 
-                 selectedCarIds: Array.from(selectedCarIds), 
-                 selectedDrivers: Array.from(selectedDrivers.entries()), 
-                 selectedLuggage: Array.from(selectedLuggage), 
-                 excludedParticipantIds: Array.from(excludedParticipantIds), 
-                 participantData: Array.from(participantData.entries()), 
-                 currentAssignments: currentAssignments,
-                 // ★ 駐車場データをオブジェクト全体で保存
-                 parkingInfo: parkingInfo 
-             };
-        }
-        
-        // ★ 修正: 駐車場データ復元を更新
-        function restoreState(state){ 
-             selectedParticipantIds = new Set(state.selectedParticipantIds || []); 
-             selectedCarIds = new Set(state.selectedCarIds || []); 
-             selectedDrivers = new Map(state.selectedDrivers || []); 
-             selectedLuggage = new Set(state.selectedLuggage || []); 
-             excludedParticipantIds = new Set(state.excludedParticipantIds || []); 
-             participantData = new Map(state.participantData || []); 
-             if (participantData.size === 0) { initializeParticipantData(); }
-             
-             // ★ 駐車場データを復元
-             parkingInfo = state.parkingInfo || { groundName: '', designated: { name: '', limit: 0, memo: '' }, other: { name: '', memo: '' } };
-             groundNameEl.value = parkingInfo.groundName || '';
-             parkingDesignatedNameEl.value = parkingInfo.designated.name;
-             parkingDesignatedLimitEl.value = parkingInfo.designated.limit;
-             parkingDesignatedMemoEl.value = parkingInfo.designated.memo;
-             parkingOtherNameEl.value = parkingInfo.other.name;
-             parkingOtherMemoEl.value = parkingInfo.other.memo;
 
-             currentAssignments = state.currentAssignments || [];
-             if (currentAssignments.length > 0) {
-                 renderResults(currentAssignments, parkingInfo); 
-                 currentAssignments.forEach(car => {
-                     car.element = document.getElementById(`car-result-${car.id}`);
-                 });
-                 updateTextOutput();
-                 textOutputContainer.classList.add('hidden'); 
-             } else {
-                 renderResults([], parkingInfo); 
-             }
+        // --- ★ 修正: 状態の取得/復元 (駐車場情報を含む) ---
+        function getCurrentState(){ 
+            return { 
+                selectedParticipantIds: Array.from(selectedParticipantIds), 
+                selectedCarIds: Array.from(selectedCarIds), 
+                selectedDrivers: Array.from(selectedDrivers.entries()), 
+                selectedLuggage: Array.from(selectedLuggage), 
+                excludedParticipantIds: Array.from(excludedParticipantIds), 
+                participantData: Array.from(participantData.entries()), 
+                currentAssignments: currentAssignments,
+                parkingInfo: parkingInfo // ★ 駐車場情報も保存
+            };
+        }
+        function restoreState(state){ 
+            selectedParticipantIds = new Set(state.selectedParticipantIds || []); 
+            selectedCarIds = new Set(state.selectedCarIds || []); 
+            selectedDrivers = new Map(state.selectedDrivers || []); 
+            selectedLuggage = new Set(state.selectedLuggage || []); 
+            excludedParticipantIds = new Set(state.excludedParticipantIds || []); 
+            participantData = new Map(state.participantData || []); 
+            if (participantData.size === 0) { initializeParticipantData(); }
+            
+            // ★ 駐車場情報も復元
+            parkingInfo = state.parkingInfo || { groundName: '', designated: { name: '', limit: 0, memo: '' }, other: { name: '', memo: '' } };
+            groundNameEl.value = parkingInfo.groundName;
+            parkingDesignatedNameEl.value = parkingInfo.designated.name;
+            parkingDesignatedLimitEl.value = parkingInfo.designated.limit;
+            parkingDesignatedMemoEl.value = parkingInfo.designated.memo;
+            parkingOtherNameEl.value = parkingInfo.other.name;
+            parkingOtherMemoEl.value = parkingInfo.other.memo;
+
+            currentAssignments = state.currentAssignments || [];
+            if (currentAssignments.length > 0) {
+                renderResults(currentAssignments, parkingInfo); 
+                currentAssignments.forEach(car => {
+                    car.element = document.getElementById(`car-result-${car.id}`);
+                });
+                updateTextOutput();
+                textOutputContainer.classList.add('hidden'); 
+            } else {
+                renderResults([], parkingInfo); 
+            }
         }
         
         // --- ファイル操作 ---
         function handleExportState(){ 
-             const state = getCurrentState(); const jsonString = JSON.stringify(state, null, 2); 
-             const blob = new Blob([jsonString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `car_assignment_state_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showMessage('現在の状態をファイルに保存しました。', 'info');
+            const state = getCurrentState(); const jsonString = JSON.stringify(state, null, 2); 
+            const blob = new Blob([jsonString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `car_assignment_state_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showMessage('現在の状態をファイルに保存しました。', 'info');
         }
         function handleImportState(e){ 
-             const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (event) => { try { const state = JSON.parse(event.target.result); 
-                 restoreState(state); 
-                 renderParticipantList(); 
-                 renderCarList(); 
-                 renderExclusionList(); 
-                 showMessage('状態を読み込みました。', 'info'); } catch (err) { console.error('Error parsing JSON state:', err); showMessage('ファイルの読み込みに失敗しました。無効なJSONファイルです。', 'error'); } e.target.value = null; }; reader.readAsText(file);
-        }
-        
-        // --- テキスト出力 ---
-        function handleShowTextOutput(){ 
-              if (currentAssignments.length === 0) { showMessage('テキスト出力する結果がありません。先に「割り当て実行」を押してください。', 'error'); return; } textOutputContainer.classList.toggle('hidden'); if (!textOutputContainer.classList.contains('hidden')) { updateTextOutput(); }
-        }
-        
-        // ★ 修正: グラウンド名を出力
-        function updateTextOutput(){ 
-             if (currentAssignments.length === 0) { textOutputEl.value = ''; return; } 
-             
-             let outputLines = ["# 出力結果\n"];
-             
-             // ★ グラウンド名
-             if (parkingInfo.groundName) {
-                outputLines.push(`グラウンド: ${parkingInfo.groundName}\n`);
-             }
-             
-             const designatedCars = currentAssignments.filter(c => c.assignedParking === 'designated');
-             const dInfo = parkingInfo.designated;
-             outputLines.push(`□ ${dInfo.name} (${dInfo.limit > 0 ? dInfo.limit + '台' : '台数制限なし'})`);
-             if (dInfo.memo) outputLines.push(`　${dInfo.memo.replace(/\n/g, '\n　')}`); 
-             designatedCars.forEach(car => {
-                 outputLines.push(`・${getCarTextLine(car)}`);
-             });
-             
-             const otherCars = currentAssignments.filter(c => c.assignedParking === 'other');
-             if (otherCars.length > 0) {
-                  const oInfo = parkingInfo.other;
-                  outputLines.push('\n-------');
-                  outputLines.push(`□ ${oInfo.name}`);
-                  if (oInfo.memo) outputLines.push(`　${oInfo.memo.replace(/\n/g, '\n　')}`);
-                  otherCars.forEach(car => {
-                       outputLines.push(`・${getCarTextLine(car)}`);
-                  });
-             }
-             
-             const excludedCar = currentAssignments.find(car => car.id === 'excluded-car');
-             if (excludedCar && excludedCar.members.length > 0) {
-                  outputLines.push('\n□別便');
-                  excludedCar.members.filter(p => p !== null).forEach(p => { 
-                      let name = p.name; 
-                      if (p.type === '選手') name = '★' + name;
-                      const memo = (participantData.get(p.id)?.memo || '').trim();
-                      outputLines.push(name + (memo ? ` [${memo}]` : '')); 
-                  }); 
-             }
-
-             textOutputEl.value = outputLines.join('\n');
-        }
-        
-        function getCarTextLine(car) {
-             const carName = car.name.replace(/の車|家の車/g, 'カー');
-             let driverName = ' (ドライバー未定)';
-             if (car.driver) { 
-                 const memo = (participantData.get(car.driver.id)?.memo || '').trim();
-                 driverName = car.driver.name + (memo ? ` [${memo}]` : '');
-             }
-             const members = car.members.filter(p => p !== null).map(p => { 
-                 let name = p.name; 
-                 if (p.type === '選手') name = '★' + name;
-                 const memo = (participantData.get(p.id)?.memo || '').trim();
-                 return name + (memo ? ` [${memo}]` : '');
-             });
-             const luggage = car.hasLuggage ? '荷物' : null;
-             const parts = [driverName, ...members];
-             if (luggage) parts.push(luggage);
-             return `${carName} (${parts.join(', ')})`;
-        }
-
-        function handleCopyTextOutput(){ 
-              if (!textOutputEl.value) return; try { navigator.clipboard.writeText(textOutputEl.value).then(() => { showMessage('クリップボードにコピーしました。', 'info'); }, (err) => { legacyCopy(textOutputEl.value); }); } catch (err) { legacyCopy(textOutputEl.value); }
-        }
-        function legacyCopy(text){ 
-              const textArea = document.createElement('textarea'); textArea.value = text; textArea.style.position = 'fixed'; textArea.style.opacity = '0'; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { const successful = document.execCommand('copy'); if (successful) { showMessage('クリップボードにコピーしました。', 'info'); } else { showMessage('コピーに失敗しました。', 'error'); } } catch (err) { showMessage('コピーに失敗しました。', 'error'); } document.body.removeChild(textArea);
-        }
-
-        // --- 状態DB操作 ---
-        
-        async function handleSaveStateToDB() {
-            const name = prompt("この状態の保存名を入力してください:", `状態 ${new Date().toLocaleString()}`);
-            if (!name) return;
-
-            const state = getCurrentState();
-            const stateData = {
-                id: `state_${Date.now()}`,
-                timestamp: Date.now(),
-                name: name,
-                data: state
-            };
-            
-            try {
-                await db.addSavedState(stateData);
-                await trimOldSavedStates();
-                await loadSavedStatesFromDB();
-                showMessage(`状態「${name}」をDBに保存しました。`, 'info');
-            } catch (error) {
-                console.error("状態のDB保存に失敗:", error);
-                showMessage("状態のDB保存に失敗しました。", "error");
-            }
-        }
-        
-        async function loadSavedStatesFromDB() {
-            try {
-                const states = await db.getAllSavedStates(MAX_SAVED_STATES);
-                loadStateDbSelect.innerHTML = '<option value="">保存した状態を選択...</option>';
-                deleteStateDbSelect.innerHTML = '<option value="">削除する状態を選択...</option>';
-                
-                states.forEach(state => {
-                    const option = new Option(`${state.name} (${new Date(state.timestamp).toLocaleString()})`, state.id);
-                    loadStateDbSelect.add(option.cloneNode(true));
-                    deleteStateDbSelect.add(option);
+            const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (event) => { try { const state = JSON.parse(event.target.result); 
+                // ★ 修正: インポート時にもマスターデータ再読込
+                loadMasterDataFromDB().then(() => {
+                    restoreState(state); 
+                    renderParticipantList(); 
+                    renderCarList(); 
+                    renderExclusionList(); 
+                    showMessage('状態を読み込みました。', 'info');
                 });
-            } catch (error) {
-                console.error("保存済み状態の読み込みに失敗:", error);
-                showMessage("保存済み状態の読み込みに失敗しました。", "error");
+             } catch (err) { console.error('Error parsing JSON state:', err); showMessage('ファイルの読み込みに失敗しました。無効なJSONファイルです。', 'error'); } e.target.value = null; }; reader.readAsText(file);
+        }
+
+        // --- ★ 新規: DB操作 (状態) ---
+        async function handleSaveStateToDB() {
+            // ★ 修正: 保存時に名称をpromptで聞く
+            const defaultName = `状態 ${new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}`;
+            const name = prompt("保存する状態の名称を入力してください:", defaultName);
+            if (!name) {
+                showMessage('保存がキャンセルされました。', 'warning');
+                return; // ユーザーがキャンセルした
+            }
+
+            try {
+                const state = getCurrentState();
+                await db.saveState(state, name); // ★ 修正: nameを渡す
+                await loadSavedStatesList(); // リストを更新
+                showMessage(`状態「${name}」をDBに保存しました。`, 'info');
+            } catch (err) {
+                console.error("状態のDB保存に失敗:", err);
+                showMessage('状態の保存に失敗しました。', 'error');
             }
         }
-        
+
         async function handleLoadStateFromDB() {
-            const stateId = loadStateDbSelect.value;
-            if (!stateId) return;
-            
+            const id = parseInt(savedStateSelect.value, 10);
+            if (!id) {
+                showMessage('読み込む状態をドロップダウンから選択してください。', 'warning');
+                return;
+            }
             try {
-                const stateData = await db.getSavedState(stateId);
-                if (stateData) {
-                    restoreState(stateData.data);
-                    renderParticipantList();
-                    renderCarList();
-                    renderExclusionList();
-                    showMessage(`状態「${stateData.name}」を読み込みました。`, 'info');
+                const savedState = await db.getState(id);
+                if (savedState) {
+                    // ★ 修正: 読み込み時にもマスターデータ再読込
+                    await loadMasterDataFromDB();
+                    restoreState(savedState.state);
+                    renderParticipantList(); 
+                    renderCarList(); 
+                    renderExclusionList(); 
+                    showMessage(`状態「${savedState.name}」を読み込みました。`, 'info');
                 } else {
-                    showMessage("指定された状態が見つかりません。", "error");
+                    showMessage('選択された状態が見つかりません。', 'error');
                 }
-            } catch (error) {
-                console.error("状態の読み込みに失敗:", error);
-                showMessage("状態の読み込みに失敗しました。", "error");
+            } catch (err) {
+                console.error("状態のDB読み込みに失敗:", err);
+                showMessage('状態の読み込みに失敗しました。', 'error');
             }
         }
 
         async function handleDeleteStateFromDB() {
-            const stateId = deleteStateDbSelect.value;
-            if (!stateId) return;
+            const id = parseInt(savedStateSelect.value, 10);
+            if (!id) {
+                showMessage('削除する状態をドロップダウンから選択してください。', 'warning');
+                return;
+            }
+            // ★ 修正: 選択肢のテキストを取得して確認
+            const selectedOption = savedStateSelect.options[savedStateSelect.selectedIndex];
+            const name = selectedOption ? selectedOption.text : '選択された状態';
+
+            if (confirm(`本当に状態「${name}」を削除しますか？`)) {
+                try {
+                    await db.deleteState(id);
+                    await loadSavedStatesList(); // リストを更新
+                    showMessage(`状態「${name}」を削除しました。`, 'info');
+                } catch (err) {
+                    console.error("状態のDB削除に失敗:", err);
+                    showMessage('状態の削除に失敗しました。', 'error');
+                }
+            }
+        }
+
+        async function loadSavedStatesList() {
+            try {
+                const states = await db.getAllSavedStates();
+                savedStateSelect.innerHTML = '<option value="">保存した状態を選択...</option>'; // ★ 修正: 統合
+                states.forEach(state => {
+                    const date = new Date(state.timestamp).toLocaleString('ja-JP');
+                    const option = new Option(`${state.name} (${date})`, state.id);
+                    savedStateSelect.add(option);
+                });
+            } catch (err) {
+                console.error("保存済み状態の読み込みに失敗:", err);
+                showMessage('保存済み状態の読み込みに失敗しました。', 'error');
+            }
+        }
+
+        // --- ★ 新規: DB操作 (駐車場) ---
+        async function handleSaveParkingToDB() {
+            const groundName = groundNameEl.value;
+            const designatedName = parkingDesignatedNameEl.value;
             
-            const stateName = deleteStateDbSelect.options[deleteStateDbSelect.selectedIndex].text;
-            if (!confirm(`本当に状態「${stateName}」を削除しますか？`)) {
+            // ★ 修正: 駐車場名ではなくグラウンド名でチェック
+            if (!groundName) {
+                showMessage('保存する「グラウンド名」を入力してください。', 'warning');
+                groundNameEl.focus();
                 return;
             }
 
-            try {
-                await db.deleteSavedState(stateId);
-                await loadSavedStatesFromDB(); // ドロップダウンを更新
-                showMessage(`状態「${stateName}」を削除しました。`, 'info');
-            } catch (error) {
-                console.error("状態の削除に失敗:", error);
-                showMessage("状態の削除に失敗しました。", "error");
+            // ★ 新規: 駐車場保存時も名称をpromptで聞く
+            const defaultName = `${groundName} (${designatedName || '指定駐車場'})`;
+            const name = prompt("保存する駐車場の名称を入力してください:", defaultName);
+            if (!name) {
+                showMessage('保存がキャンセルされました。', 'warning');
+                return;
             }
-        }
-
-        async function trimOldSavedStates() {
-            try {
-                const states = await db.getAllSavedStates(999); // 全件取得
-                if (states.length > MAX_SAVED_STATES) {
-                    const statesToDelete = states.slice(MAX_SAVED_STATES); // 古いもの
-                    for (const state of statesToDelete) {
-                        await db.deleteSavedState(state.id);
-                    }
-                }
-            } catch (error) {
-                console.error("古い状態の削除に失敗:", error);
-            }
-        }
-        
-        // --- 駐車場DB操作 ---
-        
-        // ★ 修正: 駐車場保存
-        async function handleSaveParkingToDB() {
-            const currentGroundName = groundNameEl.value || '';
-            const currentDesignatedName = parkingDesignatedNameEl.value || '';
-            
-            const defaultName = currentGroundName ? `${currentGroundName} (${currentDesignatedName})` : `駐車場 ${new Date().toLocaleString()}`;
-            const name = prompt("この駐車場設定の保存名を入力してください:", defaultName);
-            if (!name) return;
 
             const parkingData = {
-                id: `parking_${Date.now()}`,
-                timestamp: Date.now(),
-                name: name, // ★ 保存名
-                groundName: groundNameEl.value,
-                designatedName: parkingDesignatedNameEl.value,
-                limit: parseInt(parkingDesignatedLimitEl.value, 10) || 999,
-                designatedMemo: parkingDesignatedMemoEl.value,
-                otherName: parkingOtherNameEl.value,
-                otherMemo: parkingOtherMemoEl.value
+                groundName: groundName,
+                designated: {
+                    name: designatedName,
+                    limit: parseInt(parkingDesignatedLimitEl.value, 10) || 999,
+                    memo: parkingDesignatedMemoEl.value
+                },
+                other: {
+                    name: parkingOtherNameEl.value,
+                    memo: parkingOtherMemoEl.value
+                }
             };
-            
             try {
-                await db.addSavedParking(parkingData);
-                await trimOldSavedParking();
-                await loadSavedParkingFromDB();
+                await db.saveParking(parkingData, name); // ★ 修正: name を渡す
+                await loadSavedParkingList(); // リストを更新
                 showMessage(`駐車場「${name}」をDBに保存しました。`, 'info');
-            } catch (error) {
-                console.error("駐車場のDB保存に失敗:", error);
-                showMessage("駐車場のDB保存に失敗しました。", "error");
+            } catch (err) {
+                console.error("駐車場データのDB保存に失敗:", err);
+                showMessage('駐車場データの保存に失敗しました。', 'error');
             }
         }
-        
-        // ★ 修正: 駐車場読み込み (ソート修正)
-        async function loadSavedParkingFromDB() {
-            try {
-                const parkingList = await db.getAllSavedParking(MAX_SAVED_PARKING);
-                loadParkingDbSelect.innerHTML = '<option value="">保存した駐車場を選択...</option>';
-                deleteParkingDbSelect.innerHTML = '<option value="">削除する駐車場を選択...</option>';
-                
-                parkingList.forEach(p => {
-                    const option = new Option(`${p.name} (${new Date(p.timestamp).toLocaleString()})`, p.id);
-                    loadParkingDbSelect.add(option.cloneNode(true));
-                    deleteParkingDbSelect.add(option);
-                });
-            } catch (error) {
-                console.error("保存済み駐車場の読み込みに失敗:", error);
-                showMessage("保存済み駐車場の読み込みに失敗しました。", "error");
-            }
-        }
-        
-        // ★ 修正: 駐車場反映
+
         async function handleLoadParkingFromDB() {
-            const parkingId = loadParkingDbSelect.value;
-            if (!parkingId) return;
-            
+            const id = parseInt(savedParkingSelect.value, 10);
+            if (!id) {
+                showMessage('読み込む駐車場データをドロップダウンから選択してください。', 'warning');
+                return;
+            }
             try {
-                const pData = await db.getSavedParking(parkingId);
-                if (pData) {
-                    groundNameEl.value = pData.groundName || '';
-                    parkingDesignatedNameEl.value = pData.designatedName || '';
-                    parkingDesignatedLimitEl.value = pData.limit || '';
-                    parkingDesignatedMemoEl.value = pData.designatedMemo || '';
-                    parkingOtherNameEl.value = pData.otherName || '';
-                    parkingOtherMemoEl.value = pData.otherMemo || '';
+                const savedParking = await db.getParking(id);
+                if (savedParking) {
+                    // フォームに値をセット
+                    groundNameEl.value = savedParking.parking.groundName || ''; // ★ グラウンド名
+                    parkingDesignatedNameEl.value = savedParking.parking.designated.name || '';
+                    parkingDesignatedLimitEl.value = savedParking.parking.designated.limit || '';
+                    parkingDesignatedMemoEl.value = savedParking.parking.designated.memo || '';
+                    parkingOtherNameEl.value = savedParking.parking.other.name || '';
+                    parkingOtherMemoEl.value = savedParking.parking.other.memo || '';
                     
-                    showMessage(`駐車場「${pData.name}」を読み込みました。`, 'info');
+                    showMessage(`駐車場「${savedParking.name}」を読み込みました。`, 'info');
                 } else {
-                    showMessage("指定された駐車場データが見つかりません。", "error");
+                    showMessage('選択された駐車場データが見つかりません。', 'error');
                 }
-            } catch (error) {
-                console.error("駐車場データの読み込みに失敗:", error);
-                showMessage("駐車場データの読み込みに失敗しました。", "error");
+            } catch (err) {
+                console.error("駐車場データのDB読み込みに失敗:", err);
+                showMessage('駐車場データの読み込みに失敗しました。', 'error');
             }
         }
-        
-        // ★ 新規: 駐車場削除
+
         async function handleDeleteParkingFromDB() {
-            const parkingId = deleteParkingDbSelect.value;
-            if (!parkingId) return;
-            
-            const parkingName = deleteParkingDbSelect.options[deleteParkingDbSelect.selectedIndex].text;
-            if (!confirm(`本当に駐車場「${parkingName}」を削除しますか？`)) {
+            const id = parseInt(savedParkingSelect.value, 10);
+            if (!id) {
+                showMessage('削除する駐車場データをドロップダウンから選択してください。', 'warning');
                 return;
             }
+            // ★ 修正: 選択肢のテキストを取得して確認
+            const selectedOption = savedParkingSelect.options[savedParkingSelect.selectedIndex];
+            const name = selectedOption ? selectedOption.text : '選択された駐車場';
 
-            try {
-                await db.deleteSavedParking(parkingId);
-                await loadSavedParkingFromDB(); // ドロップダウンを更新
-                showMessage(`駐車場「${parkingName}」を削除しました。`, 'info');
-            } catch (error) {
-                console.error("駐車場の削除に失敗:", error);
-                showMessage("駐車場の削除に失敗しました。", "error");
+            if (confirm(`本当に駐車場「${name}」を削除しますか？`)) {
+                try {
+                    await db.deleteParking(id);
+                    await loadSavedParkingList(); // リストを更新
+                    showMessage(`駐車場「${name}」を削除しました。`, 'info');
+                } catch (err) {
+                    console.error("駐車場データのDB削除に失敗:", err);
+                    showMessage('駐車場データの削除に失敗しました。', 'error');
+                }
             }
         }
 
-        async function trimOldSavedParking() {
+        async function loadSavedParkingList() {
             try {
-                const parkingList = await db.getAllSavedParking(999); // 全件取得
-                if (parkingList.length > MAX_SAVED_PARKING) {
-                    const parkingToDelete = parkingList.slice(MAX_SAVED_PARKING); // 古いもの
-                    for (const p of parkingToDelete) {
-                        await db.deleteSavedParking(p.id);
-                    }
-                }
-            } catch (error) {
-                console.error("古い駐車場の削除に失敗:", error);
+                const parkingList = await db.getAllSavedParking();
+                savedParkingSelect.innerHTML = '<option value="">保存した駐車場を選択...</option>'; // ★ 修正: 統合
+                parkingList.forEach(parking => {
+                    const date = new Date(parking.timestamp).toLocaleString('ja-JP');
+                    // ★ 修正: parking.name を表示
+                    const option = new Option(`${parking.name} (${date})`, parking.id);
+                    savedParkingSelect.add(option);
+                });
+            } catch (err) {
+                console.error("保存済み駐車場データの読み込みに失敗:", err);
+                showMessage('保存済み駐車場データの読み込みに失敗しました。', 'error');
             }
+        }
+
+        // --- ★ 新規: 全データ初期化 ---
+        async function handleClearDB() {
+            if (confirm("本当にすべてのデータ（マスター、保存した状態、保存した駐車場）をリセットしますか？\nこの操作は元に戻せません。")) {
+                try {
+                    await db.clearDatabase();
+                    showMessage('全データを初期化しました。ページをリロードします。', 'info');
+                    // 1.5秒待ってからリロード
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } catch (err) {
+                    console.error("DBのクリアに失敗:", err);
+                    showMessage('データの初期化に失敗しました。', 'error');
+                }
+            }
+        }
+
+        // --- テキスト出力 ---
+        function handleShowTextOutput(){ 
+             if (currentAssignments.length === 0) { showMessage('テキスト出力する結果がありません。先に「割り当て実行」を押してください。', 'error'); return; } textOutputContainer.classList.toggle('hidden'); if (!textOutputContainer.classList.contains('hidden')) { updateTextOutput(); }
         }
         
-        // ★ 新規: DB初期化
-        async function handleResetDB() {
-            if (!confirm("本当にすべてのデータ（マスターデータ、保存した状態、保存した駐車場）を削除し、アプリを初期状態に戻しますか？\nこの操作は元に戻せません。")) {
-                return;
+        // ★ 修正: テキスト出力 (グラウンド名対応)
+        function updateTextOutput(){ 
+            if (currentAssignments.length === 0) { textOutputEl.value = ''; return; } 
+            
+            let outputLines = ["# 出力結果\n"];
+
+            // ★ グラウンド名
+            if (parkingInfo.groundName) {
+                outputLines.push(`■ ${parkingInfo.groundName}\n`);
             }
             
-            try {
-                await db.clearAllData();
-                console.log("データベースをクリアしました。");
-                
-                // デフォルトデータを再挿入
-                await db.bulkAddFamilies(DEFAULT_FAMILIES);
-                await db.bulkAddCars(DEFAULT_AVAILABLE_CARS_INFO);
-                await db.bulkAddParking(DEFAULT_PARKING_INFO);
-                console.log("デフォルトデータを再挿入しました。");
-
-                // 状態をリセットしてリロード
-                restoreState({});
-                
-                showMessage("データベースを初期化しました。ページをリロードします。", 'info');
-                
-                // サービスワーカーのキャッシュもクリア（PWA対応）
-                if ('caches' in window) {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(key => caches.delete(key)));
-                    console.log("Service Worker キャッシュをクリアしました。");
-                }
-                
-                // リロード
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-                
-            } catch (error) {
-                console.error("DBのリセットに失敗:", error);
-                showMessage("データベースの初期化に失敗しました。", "error");
+            const designatedCars = currentAssignments.filter(c => c.assignedParking === 'designated');
+            const dInfo = parkingInfo.designated;
+            outputLines.push(`□ ${dInfo.name} (${dInfo.limit > 0 ? dInfo.limit + '台' : '台数制限なし'})`);
+            if (dInfo.memo) outputLines.push(`${dInfo.memo.replace(/^/gm, '　')}`); // ★ 修正: メモのインデント
+            designatedCars.forEach(car => {
+                outputLines.push(`・${getCarTextLine(car)}`);
+            });
+            
+            const otherCars = currentAssignments.filter(c => c.assignedParking === 'other');
+            if (otherCars.length > 0) {
+                 const oInfo = parkingInfo.other;
+                 outputLines.push('\n-------');
+                 outputLines.push(`□ ${oInfo.name}`);
+                 if (oInfo.memo) outputLines.push(`${oInfo.memo.replace(/^/gm, '　')}`); // ★ 修正: メモのインデント
+                 otherCars.forEach(car => {
+                     outputLines.push(`・${getCarTextLine(car)}`);
+                 });
             }
+            
+            const excludedCar = currentAssignments.find(car => car.id === 'excluded-car');
+            if (excludedCar && excludedCar.members.length > 0) {
+                 outputLines.push('\n□別便');
+                 excludedCar.members.filter(p => p !== null).forEach(p => { 
+                     let name = p.name; 
+                     if (p.type === '選手') name = '★' + name;
+                     const memo = (participantData.get(p.id)?.memo || '').trim();
+                     outputLines.push(name + (memo ? ` [${memo}]` : '')); 
+                 }); 
+            }
+
+            textOutputEl.value = outputLines.join('\n');
+        }
+        
+        function getCarTextLine(car) {
+            const carName = car.name.replace(/の車|家の車/g, 'カー');
+            let driverName = ' (ドライバー未定)';
+            if (car.driver) { 
+                const memo = (participantData.get(car.driver.id)?.memo || '').trim();
+                driverName = car.driver.name + (memo ? ` [${memo}]` : '');
+            }
+            const members = car.members.filter(p => p !== null).map(p => { 
+                let name = p.name; 
+                if (p.type === '選手') name = '★' + name;
+                const memo = (participantData.get(p.id)?.memo || '').trim();
+                return name + (memo ? ` [${memo}]` : '');
+            });
+            const luggage = car.hasLuggage ? '荷物' : null;
+            const parts = [driverName, ...members];
+            if (luggage) parts.push(luggage);
+            return `${carName} (${parts.join(', ')})`;
+        }
+
+        function handleCopyTextOutput(){ 
+             if (!textOutputEl.value) return; try { navigator.clipboard.writeText(textOutputEl.value).then(() => { showMessage('クリップボードにコピーしました。', 'info'); }, (err) => { legacyCopy(textOutputEl.value); }); } catch (err) { legacyCopy(textOutputEl.value); }
+        }
+        function legacyCopy(text){ 
+             const textArea = document.createElement('textarea'); textArea.value = text; textArea.style.position = 'fixed'; textArea.style.opacity = '0'; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { const successful = document.execCommand('copy'); if (successful) { showMessage('クリップボードにコピーしました。', 'info'); } else { showMessage('コピーに失敗しました。', 'error'); } } catch (err) { showMessage('コピーに失敗しました。', 'error'); } document.body.removeChild(textArea);
         }
 
     </script>
