@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配車調整アプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- PWA対応: マニフェストファイル -->
+    <link rel="manifest" href="manifest.json">
+    <!-- PWA対応: iOS向けアイコン -->
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <!-- PWA対応: テーマカラー -->
+    <meta name="theme-color" content="#ffffff"/>
+
+    <style>
+        /* details[open] summary のスタイル */
+        details[open] > summary {
+            border-bottom: 1px solid #e5e7eb; /* gray-200 */
+        }
+        /* ファイル入力ボタンを隠す */
+        #import-state-input, #import-master-input {
+            display: none;
+        }
+
+        /* 可変グリッドレイアウトのためのCSS */
+        .main-grid-layout {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr)); /* default: 1 col */
+            gap: 1.5rem; /* gap-6 */
+        }
+        
+        /* 結果表示用のグリッドレイアウト (駐車場セクション内で使用) */
+        .results-grid-layout {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr)); /* default: 1 col */
+            gap: 1rem; /* gap-4 */
+        }
+
+        @media (min-width: 768px) { /* md: breakpoint */
+            .main-grid-layout {
+                grid-template-columns: repeat(var(--layout-columns, 3), minmax(0, 1fr));
+            }
+             .results-grid-layout {
+                 grid-template-columns: repeat(var(--layout-columns, 3), minmax(0, 1fr));
+             }
+        }
+        
+        /* 選択中のチェックボックスのスタイル */
+        .swap-selected {
+            background-color: #DBEAFE; /* blue-100 */
+        }
+        .swap-selected > label, .swap-selected label { /* ラベル自体、またはラベルを含む親 */
+            font-weight: 600; /* semibold */
+            color: #1D4ED8; /* blue-700 */
+        }
+        /* 車カードヘッダー選択時 */
+        .car-header.swap-selected {
+             background-color: #DBEAFE; /* blue-100 */
+        }
+        .car-header.swap-selected h4 {
+             color: #1D4ED8; /* blue-700 */
+        }
+        
+        /* 削除ボタンのスタイル */
+        .delete-button {
+            background-color: #FEE2E2; /* red-100 */
+            color: #B91C1C; /* red-700 */
+            border: 1px solid #FCA5A5; /* red-300 */
+            border-radius: 9999px; /* rounded-full */
+            width: 1.5rem; /* w-6 */
+            height: 1.5rem; /* h-6 */
+            font-weight: bold;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-left: 0.5rem; /* ml-2 */
+            cursor: pointer;
+            line-height: 1;
+            padding-bottom: 2px; /* 微調整 */
+        }
+        .delete-button:hover {
+            background-color: #FECACA; /* red-200 */
+            color: #991B1B; /* red-800 */
+        }
+
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        
+        <div class="flex justify-between items-center mb-6 border-b pb-2">
+            <h1 class="text-3xl font-bold text-gray-800">配車調整アプリ</h1>
+            <div>
+                <a href="./master.html" target="_blank" class="text-sm bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-1 px-3 rounded-lg shadow transition duration-200 mr-2">
+                    マスターデータ管理
+                </a>
+                <a href="./manual.html" target="_blank" class="text-sm bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-lg shadow transition duration-200">
+                    利用マニュアル
+                </a>
+            </div>
+        </div>
+
+        <!-- データ操作ボタン -->
+        <section class="mb-6 space-y-4">
+            <!-- 状態 保存/復元 -->
+            <div class="bg-white p-4 rounded-lg shadow-sm border">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">作業状態の保存・復元 (DB)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <button id="save-state-db-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
+                        現在の状態をDBに保存
+                    </button>
+                    
+                    <!-- 状態の読み込みドロップダウン -->
+                    <div class="flex rounded-lg shadow-sm">
+                        <select id="load-state-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="">保存した状態を選択...</option>
+                            <!-- JSで描画 -->
+                        </select>
+                        <button id="load-state-db-button" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-3 rounded-r-md transition duration-200">
+                            読込
+                        </button>
+                    </div>
+
+                    <!-- 状態の削除ドロップダウン -->
+                    <div class="flex rounded-lg shadow-sm">
+                        <select id="delete-state-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="">削除する状態を選択...</option>
+                            <!-- JSで描画 -->
+                        </select>
+                        <button id="delete-state-db-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 rounded-r-md transition duration-200">
+                            削除
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ファイル入出力 と DB初期化 -->
+            <div class="bg-white p-4 rounded-lg shadow-sm border">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">ファイル操作・全データ初期化</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <button id="export-state-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
+                        状態を保存 (ファイル)
+                    </button>
+                    <label for="import-state-input" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200 cursor-pointer text-center">
+                        状態を読み込む (ファイル)
+                    </label>
+                    <input type="file" id="import-state-input" accept=".json">
+
+                    <button id="reset-db-button" class="md:col-start-4 bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
+                        キャッシュ全クリア (DB初期化)
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- メインコンテンツグリッド -->
+        <div id="main-content" class="main-grid-layout">
+
+            <!-- ステップ 1: 参加者選択 -->
+            <section>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-semibold text-gray-700">1. 参加者を選択</h2>
+                    <button id="toggle-details-button" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded-lg text-sm transition duration-200">
+                        すべて閉じる
+                    </button>
+                </div>
+                <div id="participant-list" class="space-y-2 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow">
+                    <p id="participant-list-loading">マスターデータを読み込み中...</p>
+                </div>
+            </section>
+
+            <!-- ステップ 2: 車選択 -->
+            <section>
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">2. 車とドライバーを選択</h2>
+                <div id="car-list" class="space-y-3 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow">
+                    <p id="car-list-loading">マスターデータを読み込み中...</p>
+                </div>
+            </section>
+
+            <!-- ステップ 3: 別便除外 -->
+            <section>
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">3. 別便の人を除外</h2>
+                <div id="exclusion-list" class="space-y-2 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow min-h-[50px]">
+                    <!-- JSで描画 -->
+                </div>
+            </section>
+
+            <!-- ★ 修正: ステップ 4 駐車場情報 -->
+            <section class="md:col-span-3">
+                 <h2 class="text-xl font-semibold text-gray-700 mb-3">4. グラウンド・駐車場と割り当て実行</h2>
+                 <div class="bg-white p-4 rounded-lg shadow">
+                    
+                    <!-- 駐車場DB操作 -->
+                    <div class="mb-6 p-4 bg-gray-50 border rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">駐車場データの保存・復元 (DB)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                             <button id="save-parking-db-button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
+                                 現在の駐車場入力内容を保存
+                             </button>
+                             <!-- 駐車場の読み込み -->
+                             <div class="flex rounded-lg shadow-sm">
+                                 <select id="load-parking-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                     <option value="">保存した駐車場を選択...</option>
+                                     <!-- JSで描画 -->
+                                 </select>
+                                 <button id="load-parking-db-button" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-3 rounded-r-md transition duration-200">
+                                     読込
+                                 </button>
+                             </div>
+                             <!-- 駐車場の削除 -->
+                             <div class="flex rounded-lg shadow-sm">
+                                 <select id="delete-parking-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                     <option value="">削除する駐車場を選択...</option>
+                                     <!-- JSで描画 -->
+                                 </select>
+                                 <button id="delete-parking-db-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 rounded-r-md transition duration-200">
+                                     削除
+                                 </button>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- 駐車場入力 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 左側: グラウンド名 + 指定駐車場 -->
+                         <div>
+                            <label for="ground-name" class="block text-sm font-medium text-gray-700">グラウンド名 (例: ホームグラウンド)</label>
+                            <input type="text" id="ground-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="SF (ホーム)">
+                            
+                            <hr class="my-4">
+
+                             <label for="parking-designated-name" class="block text-sm font-medium text-gray-700">指定駐車場の名称 (例: SF-A面)</label>
+                             <input type="text" id="parking-designated-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="SF-A面">
+                             
+                             <label for="parking-designated-limit" class="block text-sm font-medium text-gray-700 mt-3">台数制限 (半角数字)</label>
+                             <input type="number" id="parking-designated-limit" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="6">
+                             
+                             <label for="parking-designated-memo" class="block text-sm font-medium text-gray-700 mt-3">備考 (例: 地図URL、注意事項)</label>
+                             <textarea id="parking-designated-memo" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="コミュニティプラザテニスコート脇③&#10;https://maps.app.goo.gl/..."></textarea>
+                         </div>
+                         <!-- 右側: それ以外の駐車場 + 割り当てボタン -->
+                         <div>
+                             <label for="parking-other-name" class="block text-sm font-medium text-gray-700">指定以外の駐車場の名称 (例: 丘の上)</label>
+                             <input type="text" id="parking-other-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="丘の上：他応援車はこちらへ">
+                             
+                             <label for="parking-other-memo" class="block text-sm font-medium text-gray-700 mt-3">備考 (例: 地図URL、注意事項)</label>
+                             <textarea id="parking-other-memo" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="コミュニティプラザ奥、テニスコートのさらに奥"></textarea>
+                         
+                             <div class="mt-12 text-center">
+                                 <button id="assign-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
+                                     割り当て実行
+                                 </button>
+                             </div>
+                         </div>
+                    </div>
+                 </div>
+            </section>
+
+
+            <!-- ステップ 5: 割り当て結果 -->
+            <section id="results-section" class="md:col-span-3"> 
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-semibold text-gray-700">5. 割り当て結果 (チェックボックスで入れ替え)</h2>
+                    <button id="show-text-output-button" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-lg shadow text-sm transition duration-200">
+                        テキスト出力
+                    </button>
+                </div>
+                
+                <!-- メッセージエリア -->
+                <div id="message" class="hidden p-4 mb-4 border rounded-lg" role="alert">
+                    <span id="message-text"></span>
+                    <button id="message-close" type="button" class_ ="float-right font-bold text-lg leading-none">&times;</button>
+                </div>
+
+                <!-- テキスト出力エリア -->
+                <div id="text-output-container" class="mb-4 hidden">
+                    <textarea id="text-output" rows="15" class="w-full p-2 border rounded-lg font-mono text-sm bg-gray-50" readonly></textarea>
+                    <button id="copy-text-output-button" class="mt-2 bg-gray-400 hover:bg-gray-500 text-white py-1 px-3 rounded text-sm">
+                        コピー
+                    </button>
+                </div>
+
+                <!-- 割り当て結果 -->
+                <div id="results" class="space-y-6"> 
+                    <p id="results-placeholder" class="text-gray-500 text-sm bg-white p-4 rounded-lg shadow min-h-[50px]">ステップ4の「割り当て実行」を押してください。</p>
+                </div>
+            </section>
+
+        </div> <!-- main-content 閉じタグ -->
+
+    </div>
+
+    <!-- PWAインストールボタン（非表示） -->
+    <div id="install-container" class="fixed bottom-4 right-4 hidden">
+        <button id="install-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg">
+            アプリをインストール
+        </button>
+    </div>
+
+    <!-- データベース(db.js)の読み込み -->
+    <script src="db.js"></script>
+
+    <script type="module">
+        // --- レイアウト列数の定義 ---
+        const LAYOUT_COLUMNS = 3; 
+        
+        // --- 状態保存の上限 ---
+        const MAX_SAVED_STATES = 5;
+        const MAX_SAVED_PARKING = 20;
+
+        // --- 事前定義データ (DB初期化用) ---
+        
+        // DBが空の場合の初期マスターデータ
+        const DEFAULT_FAMILIES = [
+            { familyName: '小高家', order: 1, members: [ { id: 'p1', name: '斗愛', type: '選手', isFlagTarget: true, data: { grade: '5年', school: '東小', other: '', memo: '' } }, { id: 'p2', name: '小高監督', type: '保護者', data: { memo: '' } }, { id: 'p3', name: '小高母', type: '保護者', data: { memo: '' } }, { id: 'p22', name: '愛之佑', type: '選手', isFlagTarget: true, data: { grade: '3年', school: '東小', other: '', memo: '' } } ] },
+            { familyName: '難波家', order: 2, members: [ { id: 'p4', name: '諒成', type: '選手', isFlagTarget: true, data: { grade: '5年', school: 'x小', other: '', memo: '' } }, { id: 'p5', name: '難波父', type: '保護者', data: { memo: '' } } ] },
+            { familyName: '浪川家', order: 3, members: [ { id: 'p6', name: '長政', type: '選手', isFlagTarget: true, data: { grade: '5年', school: '小金小', other: '', memo: '' } }, { id: 'p7', name: '浪川父', type: '保護者', data: { memo: '' } }, { id: 'p8', name: '浪川母', type: '保護者', data: { memo: '' } } ] },
+            { familyName: '高橋家', order: 4, members: [ { id: 'p9', name: '湊多', type: '選手', isFlagTarget: true, data: { grade: '5年', school: '東小', other: '', memo: '' } } ] },
+            { familyName: '山田家', order: 5, members: [ { id: 'p10', name: '颯真', type: '選手', isFlagTarget: true, data: { grade: '4年', school: '小金小', other: '', memo: '' } }, { id: 'p11', name: '山田父', type: '保護者', data: { memo: '' } }, { id: 'p12', name: '山田母', type: '保護者', data: { memo: '' } } ] },
+            { familyName: '菱沼家', order: 6, members: [ { id: 'p13', name: '颯介', type: '選手', isFlagTarget: true, data: { grade: '4年', school: '小金小', other: '', memo: '' } }, { id: 'p14', name: '菱沼父', type: '保護者', data: { memo: '' } }, { id: 'p15', name: '菱沼母', type: '保護者', data: { memo: '' } }, { id: 'p16', name: 'つぐみ', type: '兄弟', isFlagTarget: false, data: { grade: '2年', school: '小金小', other: '', memo: '' } } ] },
+            { familyName: '小野家', order: 7, members: [ { id: 'p17', name: '暁人', type: '選手', isFlagTarget: true, data: { grade: '4年', school: '小金小', other: '', memo: '' } }, { id: 'p18', name: '小野母', type: '保護者', data: { memo: '' } }, { id: 'p19', name: 'ななか', type: '兄弟', isFlagTarget: true, data: { grade: '2年', school: '小金小', other: '', memo: '' } } ] },
+            { familyName: '野中家', order: 8, members: [
+                { id: 'p45', name: '悠生', type: '選手', isFlagTarget: true, data: { grade: '4年', school: '小金小', other: '', memo: '' } },
+                { id: 'p46', name: '野中父', type: '保護者', data: { memo: ''}},
+                { id: 'p47', name: '野中母', type: '保護者', data: { memo: ''}}
+            ]},
+            { familyName: '津村家', order: 9, members: [ { id: 'p20', name: '一樹', type: '選手', isFlagTarget: true, data: { grade: '4年', school: '東小', other: '', memo: '' } }, { id: 'p21', name: '津村父', type: '保護者', data: { memo: '' } } ] },
+            { familyName: '浅野家', order: 10, members: [ { id: 'p23', name: '泰地', type: '選手', isFlagTarget: true, data: { grade: '3年', school: '小金小', other: '', memo: '' } }, { id: 'p24', name: '浅野父', type: '保護者', data: { memo: '' } }, { id: 'p25', name: '浅野母', type: '保護者', data: { memo: '' } } ] },
+            { familyName: '近藤家', order: 11, members: [ { id: 'p26', name: '謙成', type: '選手', isFlagTarget: true, data: { grade: '3年', school: '八木南小', other: '', memo: '' } }, { id: 'p44', name: '茉莉', type: '選手', isFlagTarget: true, data: { grade: '1年', school: '八木南小', other: '', memo: '' } } , { id: 'p27', name: '近藤父', type: '保護者', data: { memo: '' } }, { id: 'p28', name: '近藤母', type: '保護者', data: { memo: '' } }, { id: 'p29', name: 'おうすけ', type: '兄弟', isFlagTarget: true, data: { grade: '', school: '', other: '', memo: '' } } ] },
+            { familyName: '知野見家', order: 12, members: [ { id: 'p30', name: '怜央', type: '選手', isFlagTarget: true, data: { grade: '3年', school: '小金小', other: '', memo: '' } }, { id: 'p31', name: '知野見父', type: '保護者', data: { memo: '' } }, { id: 'p32', name: '知野見母', type: '保護者', data: { memo: '' } }, { id: 'p33', name: 'ゆな', type: '兄弟', isFlagTarget: true, data: { grade: '', school: '', other: '', memo: '' } } ] },
+            { familyName: '藤山家', order: 13, members: [ { id: 'p34', name: '琉杜', type: '選手', isFlagTarget: true, data: { grade: '3年', school: '小金小', other: '', memo: '' } }, { id: 'p35', name: '藤山父', type: '保護者', data: { memo: '' } }, { id: 'p36', name: '藤山母', type: '保護者', data: { memo: '' } } ] },
+            { familyName: '小河原家', order: 14, members: [ { id: 'p37', name: '維', type: '選手', isFlagTarget: true, data: { grade: '3年', school: '小金小', other: '', memo: '' } }, { id: 'p38', name: '小河原父', type: '保護者', data: { memo: '' } }, { id: 'p39', name: '小河原母', type: '保護者', data: { memo: '' } } ] },
+            { familyName: '古川家', order: 15, members: [ { id: 'p40', name: '峻丞', type: '選手', isFlagTarget: true, data: { grade: '2年', school: '新松戸南小', other: '', memo: '' } }, { id: 'p41', name: '古川父', type: '保護者', data: { memo: '' } } ] },
+            { familyName: '坪井家', order: 16, members: [ { id: 'p42', name: '雄也', type: '選手', isFlagTarget: true, data: { grade: '1年', school: '東小', other: '', memo: '' } }, { id: 'p43', name: '坪井父', type: '保護者', data: { memo: '' } } ] },
+             { familyName: '鈴木家', order: 17, members: [
+                { id: 'p48', name: 'チヒロ', type: '選手', isFlagTarget: true, data: { grade: 'x年', school: 'y小', other: '', memo: '' } },
+                { id: 'p49', name: '鈴木父', type: '保護者', data: { memo: ''}},
+                { id: 'p50', name: '鈴木母', type: '保護者', data: { memo: ''}}
+            ]},
+            { familyName: 'ナカハラ家', order: 18, members: [
+                { id: 'p51', name: 'ソウスケ', type: '選手', isFlagTarget: true, data: { grade: 'x年', school: 'y小', other: '', memo: '' } },
+                { id: 'p52', name: 'ナカハラ父', type: '保護者', data: { memo: ''}},
+                { id: 'p53', name: 'ナカハラ母', type: '保護者', data: { memo: ''}}
+            ]},
+            { familyName: 'スタッフ・個人', order: 19, members: [ { id: 'p94', name: '渡邉会長', type: 'その他', data: { memo: '' } }, { id: 'p99', name: '木村代表', type: 'その他', data: { memo: '' } }, { id: 'p98', name: '吉田さん', type: 'その他', data: { memo: '' } }, { id: 'p97', name: '前田さん', type: 'その他', data: { memo: '' } }, { id: 'p96', name: '中田さん', type: 'その他', data: { memo: '' } }, { id: 'p95', name: '渡辺さん', type: 'その他', data: { memo: '' } }, ] }
+        ];
+
+        // ★修復: 車データを16件に戻す
+        const DEFAULT_AVAILABLE_CARS_INFO = [
+            { id: 'c1', name: '小高カー', familyName: '小高家', baseCapacity: 6, order: 1 }, 
+            { id: 'c2', name: '難波カー', familyName: '難波家', baseCapacity: 7, order: 2 }, 
+            { id: 'c3', name: '浪川カー①', familyName: '浪川家', baseCapacity: 6, order: 3 }, 
+            { id: 'c4', name: '浪川カー②', familyName: '浪川家', baseCapacity: 5, order: 4 }, 
+            { id: 'c5', name: '山田カー①', familyName: '山田家', baseCapacity: 7, order: 5 }, 
+            { id: 'c6', name: '山田カー②', familyName: '山田家', baseCapacity: 5, order: 6 }, 
+            { id: 'c7', name: '菱沼カー', familyName: '菱沼家', baseCapacity: 6, order: 7 }, 
+            { id: 'c8', name: '小野カー', familyName: '小野家', baseCapacity: 8, order: 8 }, 
+            { id: 'c9', name: '浅野カー', familyName: '浅野家', baseCapacity: 8, order: 9 }, 
+            { id: 'c10', name: '近藤カー', familyName: '近藤家', baseCapacity: 6, order: 10 }, 
+            { id: 'c11', name: '知野見カー', familyName: '知野見家', baseCapacity: 7, order: 11 }, 
+            { id: 'c12', name: '藤山カー', familyName: '藤山家', baseCapacity: 4, order: 12 }, 
+            { id: 'c13', name: '小河原カー①', familyName: '小河原家', baseCapacity: 4, order: 13 }, 
+            { id: 'c14', name: '小河原カー②', familyName: '小河原家', baseCapacity: 4, order: 14 }, 
+            { id: 'c15', name: '古川カー', familyName: '古川家', baseCapacity: 8, order: 15 }, 
+            { id: 'c16', name: 'コーチカー', familyName: 'スタッフ・個人', baseCapacity: 5, order: 16 }
+        ];
+        
+        // ★新規: 駐車場データもDBで管理
+        const DEFAULT_PARKING_INFO = [
+            { id: 'p_default_1', timestamp: Date.now(), name: 'ホーム (SF)', groundName: 'SF (ホーム)', designatedName: 'SF-A面', limit: 6, designatedMemo: 'コミュニティプラザテニスコート脇③', otherName: '丘の上', otherMemo: 'コミュニティプラザ奥、テニスコートのさらに奥' },
+            { id: 'p_default_2', timestamp: Date.now() - 1000, name: '流山河川敷', groundName: '流山河川敷', designatedName: '河川敷駐車場', limit: 999, designatedMemo: '地図URL: https://...', otherName: '近隣コインP', otherMemo: '徒歩5分' }
+        ];
+
+
+        // --- グローバル変数 (マスターデータ) ---
+        let FAMILIES = [];
+        let AVAILABLE_CARS_INFO = [];
+        let ALL_PARTICIPANTS_FLAT = [];
+
+        // --- 状態変数 (作業データ) ---
+        let selectedParticipantIds = new Set();
+        let selectedCarIds = new Set();
+        let selectedDrivers = new Map(); // carId -> driverId
+        let selectedLuggage = new Set(); // carId
+        let excludedParticipantIds = new Set();
+        let participantData = new Map(); // participantId -> { grade, school, other, memo }
+        
+        // ★修正: 駐車場データは groundName を含むオブジェクトに変更
+        let parkingInfo = {
+            groundName: '',
+            designated: { name: '', limit: 0, memo: '' },
+            other: { name: '', memo: '' }
+        };
+        
+        let currentAssignments = []; // { id, name, ..., assignedParking: 'designated' | 'other' | 'excluded' }
+        
+        let selectedSwapItems = {
+            car: null,  // { carId, element }
+            seat: null // { participantId, carId, isDriver, slotIndex, element }
+        };
+
+
+        // --- DOM参照 ---
+        const participantListEl = document.getElementById('participant-list');
+        const participantListLoadingEl = document.getElementById('participant-list-loading');
+        const carListEl = document.getElementById('car-list');
+        const carListLoadingEl = document.getElementById('car-list-loading');
+        const exclusionListEl = document.getElementById('exclusion-list');
+        const resultsEl = document.getElementById('results');
+        const assignButton = document.getElementById('assign-button');
+        const messageContainer = document.getElementById('message');
+        const messageText = document.getElementById('message-text');
+        const messageClose = document.getElementById('message-close');
+        
+        // ファイル操作
+        const exportButton = document.getElementById('export-state-button');
+        const importInput = document.getElementById('import-state-input');
+        
+        // 状態DB操作
+        const saveStateDbButton = document.getElementById('save-state-db-button');
+        const loadStateDbSelect = document.getElementById('load-state-db-select');
+        const loadStateDbButton = document.getElementById('load-state-db-button');
+        const deleteStateDbSelect = document.getElementById('delete-state-db-select');
+        const deleteStateDbButton = document.getElementById('delete-state-db-button');
+
+        // 駐車場DB操作
+        const saveParkingDbButton = document.getElementById('save-parking-db-button');
+        const loadParkingDbSelect = document.getElementById('load-parking-db-select');
+        const loadParkingDbButton = document.getElementById('load-parking-db-button');
+        const deleteParkingDbSelect = document.getElementById('delete-parking-db-select');
+        const deleteParkingDbButton = document.getElementById('delete-parking-db-button');
+        
+        // テキスト出力
+        const showTextOutputButton = document.getElementById('show-text-output-button');
+        const textOutputContainer = document.getElementById('text-output-container');
+        const textOutputEl = document.getElementById('text-output');
+        const copyTextOutputButton = document.getElementById('copy-text-output-button');
+        const toggleDetailsButton = document.getElementById('toggle-details-button');
+        
+        // 駐車場入力
+        const groundNameEl = document.getElementById('ground-name'); // ★追加
+        const parkingDesignatedNameEl = document.getElementById('parking-designated-name');
+        const parkingDesignatedLimitEl = document.getElementById('parking-designated-limit');
+        const parkingDesignatedMemoEl = document.getElementById('parking-designated-memo');
+        const parkingOtherNameEl = document.getElementById('parking-other-name');
+        const parkingOtherMemoEl = document.getElementById('parking-other-memo');
+        
+        // DB初期化
+        const resetDbButton = document.getElementById('reset-db-button');
+
+        // PWAインストール
+        const installContainer = document.getElementById('install-container');
+        const installButton = document.getElementById('install-button');
+        let deferredPrompt = null;
+
+
+        // --- 初期化処理 ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.documentElement.style.setProperty('--layout-columns', LAYOUT_COLUMNS);
+            
+            const resultsSection = document.getElementById('results-section');
+            function updateLayouts() { 
+                const placeholder = document.getElementById('results-placeholder');
+                
+                if (window.innerWidth >= 768) { // md breakpoint
+                    document.getElementById('main-content').style.gridTemplateColumns = `repeat(${LAYOUT_COLUMNS}, minmax(0, 1fr))`;
+                    resultsSection.style.gridColumn = `span ${LAYOUT_COLUMNS}`;
+                } else {
+                    document.getElementById('main-content').style.gridTemplateColumns = 'repeat(1, minmax(0, 1fr))';
+                    resultsSection.style.gridColumn = 'auto';
+                }
+            }
+            updateLayouts();
+            window.addEventListener('resize', updateLayouts); 
+
+            // ★ DBからマスターデータを読み込む
+            try {
+                await loadMasterData();
+            } catch (error) {
+                console.error("マスターデータの読み込みに失敗しました:", error);
+                participantListLoadingEl.textContent = "エラー: マスターデータの読み込みに失敗しました。";
+                carListLoadingEl.textContent = "エラー: マスターデータの読み込みに失敗しました。";
+                showMessage("データベースの読み込みに失敗しました。マニュアルに従ってマスターデータをインポートするか、「キャッシュ全クリア」を試してください。", "error");
+                return; // マスターデータがないと続行不可
+            }
+
+            initializeParticipantData(); 
+            renderParticipantList();
+            renderCarList();
+            renderExclusionList();
+            
+            // ★ DBから保存済みデータを読み込む
+            await loadSavedStatesFromDB();
+            await loadSavedParkingFromDB();
+            
+            // イベントリスナー登録
+            participantListEl.addEventListener('change', handleParticipantChange);
+            participantListEl.addEventListener('input', handleParticipantDataInput); 
+            participantListEl.addEventListener('click', handleFamilyCheck); 
+            carListEl.addEventListener('change', handleCarChange);
+            exclusionListEl.addEventListener('change', handleExclusionChange);
+            assignButton.addEventListener('click', handleAssignment);
+            messageClose.addEventListener('click', hideMessage);
+
+            resultsEl.addEventListener('change', handleSwapCheckboxChange);
+            
+            exportButton.addEventListener('click', handleExportState);
+            importInput.addEventListener('change', handleImportState);
+            showTextOutputButton.addEventListener('click', handleShowTextOutput);
+            copyTextOutputButton.addEventListener('click', handleCopyTextOutput);
+            toggleDetailsButton.addEventListener('click', handleToggleDetails);
+
+            // DB操作
+            saveStateDbButton.addEventListener('click', handleSaveStateToDB);
+            loadStateDbButton.addEventListener('click', handleLoadStateFromDB);
+            deleteStateDbButton.addEventListener('click', handleDeleteStateFromDB);
+            
+            saveParkingDbButton.addEventListener('click', handleSaveParkingToDB);
+            loadParkingDbButton.addEventListener('click', handleLoadParkingFromDB);
+            deleteParkingDbButton.addEventListener('click', handleDeleteParkingFromDB);
+
+            resetDbButton.addEventListener('click', handleResetDB);
+            
+            // PWAインストール
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installContainer.classList.remove('hidden');
+            });
+
+            installButton.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response to the install prompt: ${outcome}`);
+                    deferredPrompt = null;
+                    installContainer.classList.add('hidden');
+                }
+            });
+            
+            // PWA サービスワーカー登録
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('sw.js')
+                        .then(registration => {
+                            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        })
+                        .catch(err => {
+                            console.log('ServiceWorker registration failed: ', err);
+                        });
+                });
+            }
+        });
+        
+        // ★ 新規: DBからマスターデータを読み込む
+        async function loadMasterData() {
+            try {
+                let families = await db.getAllFamilies();
+                let cars = await db.getAllCars();
+
+                // DBが空の場合、デフォルトデータを挿入
+                if (families.length === 0 && cars.length === 0) {
+                    console.log("DBが空です。デフォルトマスターデータを挿入します。");
+                    await db.bulkAddFamilies(DEFAULT_FAMILIES);
+                    await db.bulkAddCars(DEFAULT_AVAILABLE_CARS_INFO);
+                    
+                    // ★ 駐車場データも初期化
+                    await db.clearAllParking();
+                    await db.bulkAddParking(DEFAULT_PARKING_INFO);
+                    
+                    families = await db.getAllFamilies();
+                    cars = await db.getAllCars();
+                }
+                
+                // order でソート
+                FAMILIES = families.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+                AVAILABLE_CARS_INFO = cars.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+                
+                ALL_PARTICIPANTS_FLAT = FAMILIES.flatMap(f => f.members);
+                
+                console.log("マスターデータをDBから読み込みました。", FAMILIES, AVAILABLE_CARS_INFO);
+
+            } catch (error) {
+                console.error("マスターデータの読み込みに失敗しました:", error);
+                throw new Error("DBからのマスターデータ読み込みに失敗しました。");
+            }
+        }
+
+        // 参加者データ（備考含む）を初期化
+        function initializeParticipantData() {
+            participantData.clear(); 
+            FAMILIES.forEach(family => {
+                family.members.forEach(member => {
+                    const defaultData = { 
+                        grade: '', school: '', other: '', memo: '',
+                        ...(member.data || {}) 
+                    };
+                    
+                    if (!member.isFlagTarget) {
+                        defaultData.grade = '';
+                        defaultData.school = '';
+                        defaultData.other = '';
+                    }
+                    participantData.set(member.id, defaultData);
+                });
+            });
+        }
+
+        // ステップ1: 参加者リストを描画
+        function renderParticipantList() {
+            if (FAMILIES.length === 0) {
+                participantListLoadingEl.textContent = "マスターデータがありません。マスターデータ管理ページからインポートしてください。";
+                return;
+            }
+            participantListEl.innerHTML = '';
+            
+            FAMILIES.forEach(family => {
+                const details = document.createElement('details');
+                details.className = 'bg-gray-50 rounded border';
+                details.open = true; // ★デフォルトで開く
+                
+                const summary = document.createElement('summary');
+                summary.className = 'p-3 cursor-pointer select-none flex justify-between items-center';
+                
+                const summaryTitle = document.createElement('span');
+                summaryTitle.className = 'font-semibold';
+                summaryTitle.textContent = family.familyName;
+                summary.appendChild(summaryTitle);
+
+                // ★一括チェックボタン
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'space-x-1';
+                buttonGroup.innerHTML = `
+                    <button data-family-id="${family.familyName}" data-check-action="check" class="text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded">全員参加</button>
+                    <button data-family-id="${family.familyName}" data-check-action="uncheck" class="text-xs bg-gray-400 hover:bg-gray-500 text-white py-1 px-2 rounded">全員不参加</button>
+                `;
+                summary.appendChild(buttonGroup);
+
+                const memberList = document.createElement('div');
+                memberList.className = 'p-3 border-t border-gray-200 space-y-3';
+
+                family.members.forEach(p => {
+                    const isChecked = selectedParticipantIds.has(p.id);
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'ml-4';
+
+                    // 参加者名とチェックボックス
+                    const participantDiv = document.createElement('div');
+                    participantDiv.className = 'flex items-center';
+                    participantDiv.innerHTML = `
+                        <input type="checkbox" id="p-${p.id}" data-id="${p.id}" data-family-id="${family.familyName}" data-action="select-participant" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${isChecked ? 'checked' : ''}>
+                        <label for="p-${p.id}" class="text-gray-700">${p.name} (${p.type})</label>
+                    `;
+                    wrapper.appendChild(participantDiv);
+                    
+                    // データ入力欄
+                    const data = participantData.get(p.id) || { grade: '', school: '', other: '', memo: '' };
+                    const dataDiv = document.createElement('div');
+                    dataDiv.id = `data-inputs-${p.id}`; 
+                    dataDiv.className = `ml-8 mt-1.5 grid grid-cols-4 gap-2 ${isChecked ? '' : 'opacity-50'}`;
+                    
+                    // ★ 修正: 「同乗優先」がオン(isFlagTarget: true)の場合のみ入力欄を表示
+                    if (p.isFlagTarget) {
+                        dataDiv.innerHTML = `
+                            <input type="text" data-id="${p.id}" data-type="grade" value="${data.grade || ''}" placeholder="学年" class="w-full text-sm p-1 border rounded shadow-sm" ${isChecked ? '' : 'disabled'}>
+                            <input type="text" data-id="${p.id}" data-type="school" value="${data.school || ''}" placeholder="学校" class="w-full text-sm p-1 border rounded shadow-sm" ${isChecked ? '' : 'disabled'}>
+                            <input type="text" data-id="${p.id}" data-type="other" value="${data.other || ''}" placeholder="その他" class="w-full text-sm p-1 border rounded shadow-sm" ${isChecked ? '' : 'disabled'}>
+                            <input type="text" data-id="${p.id}" data-type="memo" value="${data.memo || ''}" placeholder="備考" class="w-full text-sm p-1 border rounded shadow-sm" ${isChecked ? '' : 'disabled'}>
+                        `;
+                    } else {
+                        // isFlagTarget: false の場合は備考欄のみ
+                        dataDiv.innerHTML = `
+                            <div class="col-span-3"></div> <!-- 空白 -->
+                            <input type="text" data-id="${p.id}" data-type="memo" value="${data.memo || ''}" placeholder="備考" class="w-full text-sm p-1 border rounded shadow-sm" ${isChecked ? '' : 'disabled'}>
+                        `;
+                    }
+                    wrapper.appendChild(dataDiv);
+                    memberList.appendChild(wrapper);
+                });
+                details.appendChild(summary);
+                details.appendChild(memberList);
+                participantListEl.appendChild(details);
+            });
+        }
+        
+        // ★家族一括チェック用
+        function handleFamilyCheck(e) {
+            const target = e.target.closest('button[data-check-action]');
+            if (!target) return;
+            e.preventDefault(); 
+            const familyName = target.dataset.familyId;
+            const action = target.dataset.checkAction;
+            const shouldCheck = (action === 'check');
+            const family = FAMILIES.find(f => f.familyName === familyName);
+            if (!family) return;
+            family.members.forEach(member => {
+                const checkbox = participantListEl.querySelector(`#p-${member.id}`);
+                if (checkbox && checkbox.checked !== shouldCheck) {
+                    checkbox.checked = shouldCheck;
+                    checkbox.dispatchEvent(new Event('change', { bubbles: true })); 
+                }
+            });
+        }
+
+        // ステップ2: 車リストを描画
+        function renderCarList() {
+            if (AVAILABLE_CARS_INFO.length === 0) {
+                 carListLoadingEl.textContent = "マスターデータがありません。マスターデータ管理ページからインポートしてください。";
+                 return;
+            }
+            carListEl.innerHTML = '';
+            
+            AVAILABLE_CARS_INFO.forEach(car => {
+                const family = FAMILIES.find(f => f.familyName === car.familyName);
+                
+                // ★ 修正: ドライバー候補から選手と兄弟を除外
+                const driverCandidates = family ? family.members : ALL_PARTICIPANTS_FLAT;
+                const driverOptions = driverCandidates.filter(p => p.type !== '選手' && p.type !== '兄弟');
+                
+                const isChecked = selectedCarIds.has(car.id);
+                let defaultDriverId = '';
+                if (family) {
+                    // ★ 修正: フィルタリングされた候補からデフォルトドライバーを探す
+                    const father = driverOptions.find(m => m.type === '保護者' && (m.name.includes('父') || m.name.includes('監督')));
+                    const mother = driverOptions.find(m => m.type === '保護者' && m.name.includes('母'));
+                    if (father) defaultDriverId = father.id;
+                    else if (mother) defaultDriverId = mother.id;
+                }
+                
+                const driverId = selectedDrivers.get(car.id) || defaultDriverId;
+                if(defaultDriverId && !selectedDrivers.has(car.id)) {
+                     selectedDrivers.set(car.id, defaultDriverId); 
+                }
+                
+                const hasLuggage = selectedLuggage.has(car.id);
+                const div = document.createElement('div');
+                div.className = 'bg-gray-50 rounded border p-3';
+                div.dataset.carId = car.id;
+                div.innerHTML = `
+                    <div class="flex items-center">
+                        <input type="checkbox" id="c-${car.id}" data-id="${car.id}" data-action="select-car" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${isChecked ? 'checked' : ''}>
+                        <label for="c-${car.id}" class="font-semibold">${car.name} (定員${car.baseCapacity}名)</label>
+                    </div>
+                    <div id="car-options-${car.id}" class="ml-8 mt-3 space-y-3 ${isChecked ? '' : 'hidden'}">
+                        <div>
+                            <label for="driver-${car.id}" class="block text-sm font-medium text-gray-700">ドライバー:</label>
+                            <select id="driver-${car.id}" data-action="select-driver" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="">選択してください</option>
+                                ${driverOptions.map(p => `<option value="${p.id}" ${driverId === p.id ? 'selected' : ''}>${p.name} (${p.type})</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="luggage-${car.id}" data-action="select-luggage" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${hasLuggage ? 'checked' : ''}>
+                            <label for="luggage-${car.id}" class="text-sm text-gray-700">荷物あり (総定員2名)</label>
+                        </div>
+                    </div>
+                `;
+                carListEl.appendChild(div);
+            });
+        }
+
+        // ステップ3: 除外リストを描画
+        function renderExclusionList() {
+            exclusionListEl.innerHTML = '';
+            const participants = ALL_PARTICIPANTS_FLAT.filter(p => selectedParticipantIds.has(p.id));
+            if (participants.length === 0) {
+                exclusionListEl.innerHTML = '<p class="text-gray-500 text-sm">ステップ1で参加者を選択してください。</p>';
+                return;
+            }
+            participants.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center';
+                div.innerHTML = `
+                    <input type="checkbox" id="ex-${p.id}" data-id="${p.id}" data-action="exclude-participant" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${excludedParticipantIds.has(p.id) ? 'checked' : ''}>
+                    <label for="ex-${p.id}" class="text-gray-700">${p.name} (${p.type})</label>
+                `;
+                exclusionListEl.appendChild(div);
+            });
+        }
+
+        // ステップ5: 割り当て結果を描画
+        function renderResults(assignments, parkingData) {
+            resultsEl.innerHTML = '';
+            selectedSwapItems = { car: null, seat: null }; // 選択状態をリセット
+            
+            if (assignments.length === 0) {
+                resultsEl.innerHTML = `<p id="results-placeholder" class="text-gray-500 text-sm bg-white p-4 rounded-lg shadow min-h-[50px] md:col-span-3">ステップ4の「割り当て実行」を押してください。</p>`;
+                return;
+            }
+            
+            // 駐車場ごとにグループ化
+            const designatedCars = assignments.filter(c => c.assignedParking === 'designated');
+            const otherCars = assignments.filter(c => c.assignedParking === 'other');
+            const excludedCars = assignments.filter(c => c.id === 'excluded-car'); // 別便
+
+            // 0. グラウンド名
+            if (parkingData.groundName) {
+                const groundTitle = document.createElement('h2');
+                groundTitle.className = "text-2xl font-bold text-gray-800 mb-2";
+                groundTitle.textContent = `グラウンド: ${parkingData.groundName}`;
+                resultsEl.appendChild(groundTitle);
+            }
+
+            // 1. 指定駐車場セクション
+            resultsEl.appendChild(createParkingSection('designated', parkingData.designated, designatedCars));
+            // 2. それ以外の駐車場セクション
+            resultsEl.appendChild(createParkingSection('other', parkingData.other, otherCars));
+            // 3. 別便セクション
+            if (excludedCars.length > 0) {
+                resultsEl.appendChild(createParkingSection('excluded', { name: '別便', memo: '' }, excludedCars));
+            }
+        }
+        
+        // ★ 修正: 駐車場セクションを描画
+        function createParkingSection(type, info, cars) {
+            const section = document.createElement('div');
+            section.className = 'bg-white rounded-lg shadow-inner border border-gray-200 p-4';
+            
+            let memoHtml = info.memo.replace(/\n/g, '<br>');
+            let titleHtml = '';
+            
+            if (type === 'designated') {
+                 titleHtml = `□ ${info.name || '指定駐車場'} (${info.limit > 0 ? info.limit + '台' : '台数制限なし'})`;
+            } else if (type === 'other') {
+                 titleHtml = `□ ${info.name || '指定駐車場以外'}`;
+            } else {
+                 titleHtml = `□ 別便`;
+            }
+            
+            section.innerHTML = `
+                <h3 class="text-lg font-semibold text-gray-800 mb-1">${titleHtml}</h3>
+                <p class="text-sm text-gray-600 mb-4 ml-4">${memoHtml}</p>
+                <div class="results-grid-layout">
+                    ${cars.map(car => createCarCardHtml(car)).join('')}
+                </div>
+            `;
+            return section;
+        }
+
+        // ★ 修正: 車カードのHTMLを生成
+        function createCarCardHtml(car) {
+            const cardId = `car-result-${car.id}`;
+            let headerHtml = '';
+            let driverHtml = '';
+            let membersHtml = '';
+            const swapCheckboxId = `swap-car-${car.id}`;
+
+            if (car.id === 'excluded-car') {
+                 headerHtml = `<div class="p-4 border-b bg-gray-100 flex-shrink-0"><h4 class="font-bold text-lg text-gray-700">合計: ${car.members.length}名</h4></div>`;
+                
+                // 別便のメンバー
+                membersHtml = car.members.map((p, i) => { 
+                    if (!p) return ''; // 万が一 null があってもスキップ
+                    const memo = (participantData.get(p.id)?.memo || '').trim();
+                    // ★ 修正: isFlagTarget と data を参照
+                    const flags = (p.isFlagTarget && (p.grade || p.school || p.other)) ? [p.grade, p.school, p.other].filter(Boolean).join(' ') : '';
+                    const id = `seat-${car.id}-${p.id}`;
+                    return `<li class="p-2 bg-gray-100 rounded shadow-sm flex items-center justify-between">
+                                <div class="flex items-center min-w-0">
+                                    <input type="checkbox" id="${id}" data-swap-type="seat" data-car-id="${car.id}" data-participant-id="${p.id}" data-is-driver="false" data-slot-index="${i}" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <label for="${id}" class="flex flex-col min-w-0">
+                                        <span class="break-words">${p.name} (${p.type})</span>
+                                        ${memo ? `<span class="text-xs text-gray-500 break-words">[${memo}]</span>` : ''}
+                                    </label>
+                                </div>
+                                <span class="text-xs text-gray-400 ml-2 flex-shrink-0">${flags}</span>
+                            </li>`;
+                }).join('');
+                
+                const emptySeatId = `seat-excluded-car-empty`;
+                membersHtml += `<li class="p-2 bg-gray-50 rounded shadow-sm flex items-center">
+                                    <input type="checkbox" id="${emptySeatId}" data-swap-type="seat" data-car-id="${car.id}" data-participant-id="empty" data-is-driver="false" data-slot-index="-1" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <label for="${emptySeatId}" class="text-gray-400 italic">-- 別便へ移動 --</label>
+                                </li>`;
+
+            } else {
+                const totalOccupants = (car.driver ? 1 : 0) + car.members.filter(p => p !== null).length;
+                const totalVacancy = car.baseCapacity - totalOccupants;
+                const passengerVacancy = car.capacity - car.members.filter(p => p !== null).length;
+                const luggageInfo = car.hasLuggage ? ' (荷物あり)' : '';
+                
+                headerHtml = `
+                    <div class="p-4 border-b flex-shrink-0 flex items-center car-header">
+                        <input type="checkbox" id="${swapCheckboxId}" data-swap-type="car" data-car-id="${car.id}" class="mr-3 rounded border-gray-400 text-green-600 focus:ring-green-500">
+                        <div>
+                            <h4 class="font-bold text-lg"><label for="${swapCheckboxId}">${car.name} ${luggageInfo}</label></h4>
+                            <p class="text-sm font-medium ${passengerVacancy < 0 ? 'text-red-600' : 'text-blue-600'}">
+                            総定員 ${car.baseCapacity}名 (空き ${totalVacancy}名)
+                            </p>
+                        </div>
+                    </div>`;
+                
+                const d = car.driver;
+                const driverId = d ? d.id : 'empty';
+                const driverLabel = d ? `[D] ${d.name} (${d.type})` : 'ドライバー空席';
+                const driverMemo = (d && (participantData.get(d.id)?.memo || '').trim());
+                const driverSeatId = `seat-${car.id}-driver`;
+                
+                driverHtml = `
+                <div id="driver-dropzone-${car.id}" class="p-4 border-b driver-dropzone flex-shrink-0">
+                    <li class="p-2 ${d ? 'bg-blue-100' : 'bg-red-50'} rounded shadow-sm flex items-center">
+                         <input type="checkbox" id="${driverSeatId}" data-swap-type="seat" data-car-id="${car.id}" data-participant-id="${driverId}" data-is-driver="true" data-slot-index="-1" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                         <label for="${driverSeatId}" class="flex flex-col min-w-0 ${d ? 'text-blue-800' : 'text-red-700'}">
+                            <span class="font-semibold break-words">${driverLabel}</span>
+                            ${driverMemo ? `<span class="text-xs ${d ? 'text-blue-600' : 'text-red-600'} ml-2 break-words">[${driverMemo}]</span>` : ''}
+                         </label>
+                    </li>
+                </div>`;
+                
+                // 乗客スロット
+                for (let i = 0; i < car.capacity; i++) {
+                    const p = car.members[i]; // null である可能性あり
+                    
+                    if (p) {
+                        const memo = (participantData.get(p.id)?.memo || '').trim();
+                        // ★ 修正: isFlagTarget と data を参照
+                        const flags = (p.isFlagTarget && (p.grade || p.school || p.other)) ? [p.grade, p.school, p.other].filter(Boolean).join(' ') : '';
+                        const seatId = `seat-${car.id}-${p.id}`;
+                        membersHtml += `<li class="p-2 bg-gray-100 rounded shadow-sm flex items-center justify-between">
+                                            <div class="flex items-center min-w-0">
+                                                <input type="checkbox" id="${seatId}" data-swap-type="seat" data-car-id="${car.id}" data-participant-id="${p.id}" data-is-driver="false" data-slot-index="${i}" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                                <label for="${seatId}" class="flex flex-col min-w-0">
+                                                    <span class="break-words">${p.name} (${p.type})</span>
+                                                    ${memo ? `<span class="text-xs text-gray-500 break-words">[${memo}]</span>` : ''}
+                                                </label>
+                                            </div>
+                                            <span class="text-xs text-gray-400 ml-2 flex-shrink-0">${flags}</span>
+                                        </li>`;
+                    } else {
+                        // 空席スロット
+                        const seatId = `seat-${car.id}-empty-${i}`;
+                        membersHtml += `<li class="p-2 bg-gray-50 rounded shadow-sm flex items-center">
+                                            <input type="checkbox" id="${seatId}" data-swap-type="seat" data-car-id="${car.id}" data-participant-id="empty" data-is-driver="false" data-slot-index="${i}" class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                            <label for="${seatId}" class="text-gray-400 italic">-- 空席 --</label>
+                                        </li>`;
+                    }
+                }
+            }
+            
+            return `<div class="bg-white border rounded-lg shadow-md car-dropzone flex flex-col">${headerHtml}${driverHtml}<ul id="members-dropzone-${car.id}" class="p-4 space-y-2 min-h-[50px] members-dropzone flex-grow overflow-y-auto">${membersHtml}</ul></div>`;
+        }
+
+
+        // --- ★ 修正: チェックボックス操作ロジック (車/座席 両対応) ---
+
+        function handleSwapCheckboxChange(e) {
+            const target = e.target;
+            if (target.type !== 'checkbox' || !target.dataset.swapType) return;
+
+            const swapType = target.dataset.swapType; // 'car' or 'seat'
+            const li = target.closest('li');
+            const header = target.closest('.car-header');
+            
+            // --- 選択解除 ---
+            const existingItem = selectedSwapItems[swapType];
+            if (existingItem && existingItem.element === target) {
+                selectedSwapItems[swapType] = null;
+                if (li) li.classList.remove('swap-selected');
+                if (header) header.classList.remove('swap-selected');
+                return;
+            }
+
+            // --- 新規選択 ---
+            let newItem = null;
+            if (swapType === 'car') {
+                newItem = { carId: target.dataset.carId, element: target };
+                if (header) header.classList.add('swap-selected');
+            } else { // seat
+                newItem = {
+                    participantId: target.dataset.participantId,
+                    carId: target.dataset.carId,
+                    isDriver: target.dataset.isDriver === 'true',
+                    slotIndex: target.dataset.slotIndex !== undefined ? parseInt(target.dataset.slotIndex, 10) : -1,
+                    element: target
+                };
+                if (li) li.classList.add('swap-selected');
+            }
+
+            // 既存の選択とタイプが違う場合はエラー
+            if ((swapType === 'car' && selectedSwapItems.seat) || (swapType === 'seat' && selectedSwapItems.car)) {
+                showMessage('車と座席を同時に選択して入れ替えることはできません。', 'error');
+                // 新しい選択をキャンセル
+                target.checked = false;
+                if (li) li.classList.remove('swap-selected');
+                if (header) header.classList.remove('swap-selected');
+                return;
+            }
+
+            // 1つ目の選択をセット
+            if (!selectedSwapItems[swapType]) {
+                selectedSwapItems[swapType] = newItem;
+                return;
+            }
+
+            // --- 2つ目の選択（スワップ実行） ---
+            const itemA = selectedSwapItems[swapType];
+            const itemB = newItem;
+
+            if (swapType === 'car') {
+                performCarSwap(itemA, itemB);
+            } else {
+                performSeatSwap(itemA, itemB);
+            }
+            
+            // 選択解除 & 再描画
+            selectedSwapItems = { car: null, seat: null };
+            renderResults(currentAssignments, parkingInfo); 
+        }
+        
+        // ★ 修正: 車の駐車場入れ替え / 順序入れ替え
+        function performCarSwap(carAInfo, carBInfo) {
+            const carA = currentAssignments.find(c => c.id === carAInfo.carId);
+            const carB = currentAssignments.find(c => c.id === carBInfo.carId);
+            if (!carA || !carB) return;
+            
+            if (carA.assignedParking === carB.assignedParking) {
+                // --- 同じ駐車場内 -> 順序入れ替え ---
+                const indexA = currentAssignments.indexOf(carA);
+                const indexB = currentAssignments.indexOf(carB);
+                if (indexA > -1 && indexB > -1) {
+                    // 単純に配列の位置を入れ替える
+                    [currentAssignments[indexA], currentAssignments[indexB]] = [currentAssignments[indexB], currentAssignments[indexA]];
+                }
+            } else {
+                // --- 違う駐車場間 -> 駐車場タイプを入れ替え ---
+                const tempParking = carA.assignedParking;
+                carA.assignedParking = carB.assignedParking;
+                carB.assignedParking = tempParking;
+            }
+            
+            hideMessage();
+            updateTextOutput();
+        }
+
+        // ★ 修正: 座席入れ替え
+        function performSeatSwap(seatA, seatB) {
+            const carA = currentAssignments.find(c => c.id === seatA.carId);
+            const carB = currentAssignments.find(c => c.id === seatB.carId);
+            if (!carA || !carB) return;
+            
+            let participantA = null;
+            if (seatA.participantId !== 'empty') {
+                 participantA = seatA.isDriver ? carA.driver : (carA.members[seatA.slotIndex] || null); // ★ nullチェック
+            }
+            let participantB = null;
+            if (seatB.participantId !== 'empty') {
+                 participantB = seatB.isDriver ? carB.driver : (carB.members[seatB.slotIndex] || null); // ★ nullチェック
+            }
+            
+            if (participantA && participantB && participantA.id === participantB.id) {
+                 return; // 何もしない
+            }
+
+            // --- 定員チェック ---
+            let carAMembersCount = carA.members.filter(p => p !== null).length;
+            if (participantA && !seatA.isDriver) carAMembersCount--; 
+            if (participantB && !seatA.isDriver) carAMembersCount++; 
+            
+            let carBMembersCount = carB.members.filter(p => p !== null).length;
+            if (participantB && !seatB.isDriver) carBMembersCount--; 
+            if (participantA && !seatB.isDriver) carBMembersCount++; 
+
+            if (carA.id !== 'excluded-car' && carAMembersCount > carA.capacity) {
+                 showMessage(`エラー: ${carA.name} が定員オーバーになります。`, 'error');
+                 return; // 入れ替え中断
+            }
+            if (carB.id !== 'excluded-car' && carBMembersCount > carB.capacity) {
+                 showMessage(`エラー: ${carB.name} が定員オーバーになります。`, 'error');
+                 return; // 入れ替え中断
+            }
+
+            // --- データ操作 ---
+            if (carA.id === carB.id) {
+                // --- 同一車内でのスワップ ---
+                if (seatA.isDriver && !seatB.isDriver) { // D <-> P
+                    carA.driver = participantB;
+                    carA.members[seatB.slotIndex] = participantA;
+                } else if (!seatA.isDriver && seatB.isDriver) { // P <-> D
+                    carA.members[seatA.slotIndex] = participantB;
+                    carA.driver = participantA;
+                } else if (!seatA.isDriver && !seatB.isDriver) { // P <-> P
+                    carA.members[seatA.slotIndex] = participantB;
+                    carA.members[seatB.slotIndex] = participantA;
+                }
+            } else {
+                // --- 別車間でのスワップ ---
+                if (seatA.isDriver) carA.driver = null;
+                else if (carA.id === 'excluded-car') carA.members = carA.members.filter(p => p && p.id !== participantA?.id); // ★ nullチェック
+                else if (seatA.slotIndex > -1) carA.members[seatA.slotIndex] = null;
+                
+                if (seatB.isDriver) carB.driver = null;
+                else if (carB.id === 'excluded-car') carB.members = carB.members.filter(p => p && p.id !== participantB?.id); // ★ nullチェック
+                else if (seatB.slotIndex > -1) carB.members[seatB.slotIndex] = null;
+
+                addParticipant(carA, participantB, seatA.isDriver, seatA.slotIndex);
+                addParticipant(carB, participantA, seatB.isDriver, seatB.slotIndex);
+            }
+
+            // 5. 空きを詰める + D昇格
+            [carA, carB].filter((car, index, self) => car && self.findIndex(c => c.id === car.id) === index)
+                .forEach(car => {
+                     if (car.id !== 'excluded-car') {
+                         car.members = car.members.filter(p => p !== null); 
+                         if (!car.driver && car.members.length > 0) {
+                             car.driver = car.members.shift();
+                         }
+                         while(car.members.length < car.capacity) {
+                             car.members.push(null);
+                         }
+                    }
+                });
+
+            hideMessage();
+            updateTextOutput();
+        }
+
+        function addParticipant(car, participant, isDriver, slotIndex = -1) {
+            if (!car) return; 
+            
+            if (participant === null) {
+                if (isDriver) {
+                    car.driver = null;
+                } else if (car.id !== 'excluded-car' && slotIndex > -1 && slotIndex < car.members.length) {
+                    car.members[slotIndex] = null; 
+                }
+                return; 
+            }
+            
+            if (car.id === 'excluded-car') {
+                 if (!car.members.some(m => m && m.id === participant.id)) { // ★ 修正: m && m.id
+                    car.members.push(participant);
+                 }
+                 return;
+             }
+            
+            if (isDriver) {
+                if (car.driver && car.driver.id !== participant.id) { 
+                    car.members.unshift(car.driver); 
+                }
+                car.driver = participant;
+            } else {
+                 if (!car.members.some(m => m && m.id === participant.id) && // ★ 修正: m && m.id
+                     (!car.driver || car.driver.id !== participant.id)) 
+                 {
+                    if (slotIndex !== -1 && car.id !== 'excluded-car' && slotIndex < car.members.length && car.members[slotIndex] === null) { 
+                         car.members[slotIndex] = participant;
+                    } else {
+                         const firstNullIndex = car.members.indexOf(null);
+                         if (firstNullIndex > -1) {
+                             car.members[firstNullIndex] = participant;
+                         } else if (car.members.length < car.capacity) {
+                             car.members.push(participant);
+                         }
+                    }
+                 }
+             }
+        }
+
+
+        // --- 他のイベントハンドラ ---
+        function handleParticipantChange(e) { 
+             const target = e.target; if (target.type === 'checkbox' && target.dataset.action === 'select-participant') { const id = target.dataset.id; const dataEl = document.getElementById(`data-inputs-${id}`); if (target.checked) { selectedParticipantIds.add(id); if (dataEl) { dataEl.classList.remove('opacity-50'); dataEl.querySelectorAll('input, textarea').forEach(input => input.disabled = false); } } else { selectedParticipantIds.delete(id); if (dataEl) { dataEl.classList.add('opacity-50'); dataEl.querySelectorAll('input, textarea').forEach(input => input.disabled = true); } if (excludedParticipantIds.has(id)) { excludedParticipantIds.delete(id); } } renderExclusionList(); }
+        }
+        function handleParticipantDataInput(e) { 
+             const target = e.target; if (target.dataset.id && target.dataset.type) { const id = target.dataset.id; const type = target.dataset.type; const value = target.value; const data = participantData.get(id) || { grade: '', school: '', other: '', memo: '' }; data[type] = value; participantData.set(id, data); }
+        }
+        function handleCarChange(e) { 
+             const target = e.target; const carId = target.closest('[data-car-id]')?.dataset.carId; if (!carId) return; const action = target.dataset.action; if (action === 'select-car') { if (target.checked) { selectedCarIds.add(carId); document.getElementById(`car-options-${carId}`)?.classList.remove('hidden'); } else { selectedCarIds.delete(carId); selectedLuggage.delete(carId); document.getElementById(`car-options-${carId}`)?.classList.add('hidden'); } } else if (action === 'select-driver') { if (target.value) { selectedDrivers.set(carId, target.value); } else { selectedDrivers.delete(carId); } } else if (action === 'select-luggage') { if (target.checked) { selectedLuggage.add(carId); } else { selectedLuggage.delete(carId); } }
+        }
+        function handleExclusionChange(e) { 
+             const target = e.target; if (target.type === 'checkbox' && target.dataset.action === 'exclude-participant') { const id = target.dataset.id; if (target.checked) { excludedParticipantIds.add(id); } else { excludedParticipantIds.delete(id); } }
+        }
+        
+        // ★ 修正: 駐車場データ取得を更新
+        function handleAssignment() { 
+             if (selectedCarIds.size === 0) { showMessage('ステップ2で車を1台以上選択してください。', 'error'); return; }
+             
+             // ★ 駐車場データをグローバル変数にセット
+             parkingInfo = {
+                 groundName: groundNameEl.value || '', // ★ グラウンド名
+                 designated: {
+                     name: parkingDesignatedNameEl.value || '指定駐車場',
+                     limit: parseInt(parkingDesignatedLimitEl.value, 10) || 999, 
+                     memo: parkingDesignatedMemoEl.value
+                 },
+                 other: {
+                     name: parkingOtherNameEl.value || '指定駐車場以外',
+                     memo: parkingOtherMemoEl.value
+                 }
+             };
+             
+             let errors = []; let driverMap = new Map(); let selectedCarsData = []; const allParticipantsWithData = ALL_PARTICIPANTS_FLAT .filter(p => selectedParticipantIds.has(p.id)) .map(p => { const family = FAMILIES.find(f => f.members.some(m => m.id === p.id)); const currentData = participantData.get(p.id) || {}; const masterData = p.data || {}; return { ...p, grade: currentData.grade !== undefined ? currentData.grade : masterData.grade || '', school: currentData.school !== undefined ? currentData.school : masterData.school || '', other: currentData.other !== undefined ? currentData.other : masterData.other || '', memo: currentData.memo !== undefined ? currentData.memo : masterData.memo || '', familyName: family ? family.familyName : null }; }); selectedCarIds.forEach(carId => { const driverId = selectedDrivers.get(carId); const carInfo = AVAILABLE_CARS_INFO.find(c=>c.id === carId); if (!carInfo) return; if (!driverId) { errors.push(`${carInfo.name} のドライバーが選択されていません。`); return; } const driver = allParticipantsWithData.find(p => p.id === driverId); if (!driver) { const masterDriverInfo = ALL_PARTICIPANTS_FLAT.find(p=>p.id === driverId); if (masterDriverInfo) { errors.push(`ドライバー (${masterDriverInfo.name}) が参加者に含まれていません。`); } else { errors.push(`${carInfo.name} のドライバー(ID: ${driverId})が見つかりません。`); } return; } if (Array.from(driverMap.values()).some(d => d.id === driverId)) { errors.push(`ドライバー (${driver.name}) が複数の車に割り当てられています。`); } driverMap.set(carId, driver); const hasLuggage = selectedLuggage.has(carId); 
+             
+             let actualCapacity = carInfo.baseCapacity - 1; 
+             let actualBaseCapacity = carInfo.baseCapacity;
+             if (hasLuggage) {
+                 actualBaseCapacity = 2; 
+                 actualCapacity = 1; 
+             }
+             
+             selectedCarsData.push({ id: carId, name: carInfo.name, familyName: carInfo.familyName, baseCapacity: actualBaseCapacity, driverId: driverId, capacity: actualCapacity, hasLuggage: hasLuggage }); }); if (errors.length > 0) { showMessage(errors.join('<br>'), 'error'); return; } const driverIds = new Set(Array.from(driverMap.values()).map(d => d.id)); let participantsToAssign = allParticipantsWithData.filter(p => !driverIds.has(p.id) && !excludedParticipantIds.has(p.id) ); let excludedParticipants = allParticipantsWithData.filter(p => excludedParticipantIds.has(p.id) && !driverIds.has(p.id) ); const totalParticipants = participantsToAssign.length; const totalCapacity = selectedCarsData.reduce((sum, car) => sum + car.capacity, 0); if (totalParticipants > totalCapacity) { showMessage(`定員オーバーです。乗客 ${totalParticipants}人 に対して定員は合計 ${totalCapacity}人 です。`, 'warning'); } else { hideMessage(); } 
+             
+             let assignments = allocateParticipants(participantsToAssign, selectedCarsData, driverMap); 
+             
+             assignments.sort((a, b) => {
+                 if (a.hasLuggage && !b.hasLuggage) return -1;
+                 if (!a.hasLuggage && b.hasLuggage) return 1;
+                 const playersA = a.members.filter(p => p && p.type === '選手').length;
+                 const playersB = b.members.filter(p => p && p.type === '選手').length;
+                 return playersB - playersA; 
+             });
+             
+             let designatedCount = 0;
+             const limit = parkingInfo.designated.limit;
+             
+             assignments.forEach(car => {
+                 if (designatedCount < limit) {
+                     car.assignedParking = 'designated';
+                     designatedCount++;
+                 } else {
+                     car.assignedParking = 'other';
+                 }
+             });
+             
+             assignments.push({ id: 'excluded-car', name: '別便', capacity: 999, baseCapacity: 999, driver: null, members: excludedParticipants, hasLuggage: false, assignedParking: 'excluded' }); 
+             
+             currentAssignments = assignments; 
+             renderResults(currentAssignments, parkingInfo); 
+             currentAssignments.forEach(car => { car.element = document.getElementById(`car-result-${car.id}`); }); 
+             updateTextOutput();
+        }
+        function allocateParticipants(participants, cars, driverMap){ 
+             let assignments = cars.map(car => ({ ...car, driver: driverMap.get(car.id) || null, members: [] })); if (participants.length === 0) return assignments; let remainingParticipants = [...participants]; const typePriority = { '保護者': 1, '兄弟': 2, '選手': 3, 'その他': 4 }; assignments.forEach(car => { if (!car.driver || !car.familyName || car.driver.familyName !== car.familyName) return; let familyMembers = remainingParticipants .filter(p => p.familyName === car.familyName) .sort((a, b) => (typePriority[a.type] || 9) - (typePriority[b.type] || 9)); familyMembers.forEach(member => { if (car.members.length < car.capacity) { car.members.push(member); remainingParticipants = remainingParticipants.filter(p => p.id !== member.id); } }); }); function getFlagMatchScore(pA, pB) { if (!pA || !pB || !pA.isFlagTarget || !pB.isFlagTarget) return 0; let score = 0; if (pA.grade && pA.grade === pB.grade) score++; if (pA.school && pA.school === pB.school) score++; if (pA.other && pA.other === pB.other) score++; return score; } let participantsToProcess = remainingParticipants.sort((a, b) => (a.isFlagTarget !== b.isFlagTarget) ? (a.isFlagTarget ? -1 : 1) : Math.random() - 0.5); let stillRemaining = []; participantsToProcess.forEach(participant => { let bestCarCandidates = []; let maxScore = 0; assignments.forEach(car => { if (car.members.length >= car.capacity) return; let currentCarScore = car.members.filter(p => p !== null).reduce((score, member) => score + getFlagMatchScore(participant, member), 0); if (currentCarScore > maxScore) { maxScore = currentCarScore; bestCarCandidates = [car]; } else if (currentCarScore > 0 && currentCarScore === maxScore) { bestCarCandidates.push(car); } }); if (bestCarCandidates.length > 0) { const bestCar = bestCarCandidates[Math.floor(Math.random() * bestCarCandidates.length)]; bestCar.members.push(participant); } else { stillRemaining.push(participant); } }); if (stillRemaining.length > 0) { let carsWithVacancy = assignments.map(car => ({ carRef: car, vacancy: car.capacity - car.members.filter(p => p !== null).length })).filter(c => c.vacancy > 0).sort((a, b) => b.vacancy - a.vacancy); let carIndex = 0; stillRemaining.forEach(participant => { if (carsWithVacancy.length === 0) return; let assigned = false, initialCarIndex = carIndex; while(!assigned) { if (carsWithVacancy.length === 0) break; carIndex = carIndex % carsWithVacancy.length; const targetCarInfo = carsWithVacancy[carIndex]; if (targetCarInfo.carRef.members.filter(p => p !== null).length < targetCarInfo.carRef.capacity) { targetCarInfo.carRef.members.push(participant); targetCarInfo.vacancy--; assigned = true; if (targetCarInfo.vacancy <= 0) carsWithVacancy.splice(carIndex, 1); else carIndex++; } else { carsWithVacancy.splice(carIndex, 1); } if (carsWithVacancy.length > 0 && carIndex % carsWithVacancy.length === initialCarIndex && !assigned) break; } }); } 
+             
+             assignments.forEach(car => {
+                 car.members = car.members.filter(p => p !== null); 
+                 while (car.members.length < car.capacity) {
+                     car.members.push(null);
+                 }
+             });
+             
+             return assignments;
+        }
+        function handleToggleDetails(){ 
+             const detailsElements = participantListEl.querySelectorAll('details'); const shouldOpen = toggleDetailsButton.textContent === 'すべて開く'; detailsElements.forEach(details => { details.open = shouldOpen; }); toggleDetailsButton.textContent = shouldOpen ? 'すべて閉じる' : 'すべて開く';
+        }
+        function showMessage(message, type = 'info'){ 
+             messageText.innerHTML = message; messageContainer.className = 'p-4 mb-4 border rounded-lg'; 
+             switch(type) {
+                 case 'error': messageContainer.classList.add('bg-red-100', 'border-red-400', 'text-red-700'); break;
+                 case 'warning': messageContainer.classList.add('bg-yellow-100', 'border-yellow-400', 'text-yellow-700'); break;
+                 default: messageContainer.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
+             }
+             messageContainer.classList.remove('hidden');
+        }
+        function hideMessage(){ 
+             messageContainer.classList.add('hidden');
+        }
+        
+        // ★ 修正: 駐車場データ取得を更新
+        function getCurrentState(){ 
+             return { 
+                 selectedParticipantIds: Array.from(selectedParticipantIds), 
+                 selectedCarIds: Array.from(selectedCarIds), 
+                 selectedDrivers: Array.from(selectedDrivers.entries()), 
+                 selectedLuggage: Array.from(selectedLuggage), 
+                 excludedParticipantIds: Array.from(excludedParticipantIds), 
+                 participantData: Array.from(participantData.entries()), 
+                 currentAssignments: currentAssignments,
+                 // ★ 駐車場データをオブジェクト全体で保存
+                 parkingInfo: parkingInfo 
+             };
+        }
+        
+        // ★ 修正: 駐車場データ復元を更新
+        function restoreState(state){ 
+             selectedParticipantIds = new Set(state.selectedParticipantIds || []); 
+             selectedCarIds = new Set(state.selectedCarIds || []); 
+             selectedDrivers = new Map(state.selectedDrivers || []); 
+             selectedLuggage = new Set(state.selectedLuggage || []); 
+             excludedParticipantIds = new Set(state.excludedParticipantIds || []); 
+             participantData = new Map(state.participantData || []); 
+             if (participantData.size === 0) { initializeParticipantData(); }
+             
+             // ★ 駐車場データを復元
+             parkingInfo = state.parkingInfo || { groundName: '', designated: { name: '', limit: 0, memo: '' }, other: { name: '', memo: '' } };
+             groundNameEl.value = parkingInfo.groundName || '';
+             parkingDesignatedNameEl.value = parkingInfo.designated.name;
+             parkingDesignatedLimitEl.value = parkingInfo.designated.limit;
+             parkingDesignatedMemoEl.value = parkingInfo.designated.memo;
+             parkingOtherNameEl.value = parkingInfo.other.name;
+             parkingOtherMemoEl.value = parkingInfo.other.memo;
+
+             currentAssignments = state.currentAssignments || [];
+             if (currentAssignments.length > 0) {
+                 renderResults(currentAssignments, parkingInfo); 
+                 currentAssignments.forEach(car => {
+                     car.element = document.getElementById(`car-result-${car.id}`);
+                 });
+                 updateTextOutput();
+                 textOutputContainer.classList.add('hidden'); 
+             } else {
+                 renderResults([], parkingInfo); 
+             }
+        }
+        
+        // --- ファイル操作 ---
+        function handleExportState(){ 
+             const state = getCurrentState(); const jsonString = JSON.stringify(state, null, 2); 
+             const blob = new Blob([jsonString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `car_assignment_state_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showMessage('現在の状態をファイルに保存しました。', 'info');
+        }
+        function handleImportState(e){ 
+             const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (event) => { try { const state = JSON.parse(event.target.result); 
+                 restoreState(state); 
+                 renderParticipantList(); 
+                 renderCarList(); 
+                 renderExclusionList(); 
+                 showMessage('状態を読み込みました。', 'info'); } catch (err) { console.error('Error parsing JSON state:', err); showMessage('ファイルの読み込みに失敗しました。無効なJSONファイルです。', 'error'); } e.target.value = null; }; reader.readAsText(file);
+        }
+        
+        // --- テキスト出力 ---
+        function handleShowTextOutput(){ 
+              if (currentAssignments.length === 0) { showMessage('テキスト出力する結果がありません。先に「割り当て実行」を押してください。', 'error'); return; } textOutputContainer.classList.toggle('hidden'); if (!textOutputContainer.classList.contains('hidden')) { updateTextOutput(); }
+        }
+        
+        // ★ 修正: グラウンド名を出力
+        function updateTextOutput(){ 
+             if (currentAssignments.length === 0) { textOutputEl.value = ''; return; } 
+             
+             let outputLines = ["# 出力結果\n"];
+             
+             // ★ グラウンド名
+             if (parkingInfo.groundName) {
+                outputLines.push(`グラウンド: ${parkingInfo.groundName}\n`);
+             }
+             
+             const designatedCars = currentAssignments.filter(c => c.assignedParking === 'designated');
+             const dInfo = parkingInfo.designated;
+             outputLines.push(`□ ${dInfo.name} (${dInfo.limit > 0 ? dInfo.limit + '台' : '台数制限なし'})`);
+             if (dInfo.memo) outputLines.push(`　${dInfo.memo.replace(/\n/g, '\n　')}`); 
+             designatedCars.forEach(car => {
+                 outputLines.push(`・${getCarTextLine(car)}`);
+             });
+             
+             const otherCars = currentAssignments.filter(c => c.assignedParking === 'other');
+             if (otherCars.length > 0) {
+                  const oInfo = parkingInfo.other;
+                  outputLines.push('\n-------');
+                  outputLines.push(`□ ${oInfo.name}`);
+                  if (oInfo.memo) outputLines.push(`　${oInfo.memo.replace(/\n/g, '\n　')}`);
+                  otherCars.forEach(car => {
+                       outputLines.push(`・${getCarTextLine(car)}`);
+                  });
+             }
+             
+             const excludedCar = currentAssignments.find(car => car.id === 'excluded-car');
+             if (excludedCar && excludedCar.members.length > 0) {
+                  outputLines.push('\n□別便');
+                  excludedCar.members.filter(p => p !== null).forEach(p => { 
+                      let name = p.name; 
+                      if (p.type === '選手') name = '★' + name;
+                      const memo = (participantData.get(p.id)?.memo || '').trim();
+                      outputLines.push(name + (memo ? ` [${memo}]` : '')); 
+                  }); 
+             }
+
+             textOutputEl.value = outputLines.join('\n');
+        }
+        
+        function getCarTextLine(car) {
+             const carName = car.name.replace(/の車|家の車/g, 'カー');
+             let driverName = ' (ドライバー未定)';
+             if (car.driver) { 
+                 const memo = (participantData.get(car.driver.id)?.memo || '').trim();
+                 driverName = car.driver.name + (memo ? ` [${memo}]` : '');
+             }
+             const members = car.members.filter(p => p !== null).map(p => { 
+                 let name = p.name; 
+                 if (p.type === '選手') name = '★' + name;
+                 const memo = (participantData.get(p.id)?.memo || '').trim();
+                 return name + (memo ? ` [${memo}]` : '');
+             });
+             const luggage = car.hasLuggage ? '荷物' : null;
+             const parts = [driverName, ...members];
+             if (luggage) parts.push(luggage);
+             return `${carName} (${parts.join(', ')})`;
+        }
+
+        function handleCopyTextOutput(){ 
+              if (!textOutputEl.value) return; try { navigator.clipboard.writeText(textOutputEl.value).then(() => { showMessage('クリップボードにコピーしました。', 'info'); }, (err) => { legacyCopy(textOutputEl.value); }); } catch (err) { legacyCopy(textOutputEl.value); }
+        }
+        function legacyCopy(text){ 
+              const textArea = document.createElement('textarea'); textArea.value = text; textArea.style.position = 'fixed'; textArea.style.opacity = '0'; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { const successful = document.execCommand('copy'); if (successful) { showMessage('クリップボードにコピーしました。', 'info'); } else { showMessage('コピーに失敗しました。', 'error'); } } catch (err) { showMessage('コピーに失敗しました。', 'error'); } document.body.removeChild(textArea);
+        }
+
+        // --- 状態DB操作 ---
+        
+        async function handleSaveStateToDB() {
+            const name = prompt("この状態の保存名を入力してください:", `状態 ${new Date().toLocaleString()}`);
+            if (!name) return;
+
+            const state = getCurrentState();
+            const stateData = {
+                id: `state_${Date.now()}`,
+                timestamp: Date.now(),
+                name: name,
+                data: state
+            };
+            
+            try {
+                await db.addSavedState(stateData);
+                await trimOldSavedStates();
+                await loadSavedStatesFromDB();
+                showMessage(`状態「${name}」をDBに保存しました。`, 'info');
+            } catch (error) {
+                console.error("状態のDB保存に失敗:", error);
+                showMessage("状態のDB保存に失敗しました。", "error");
+            }
+        }
+        
+        async function loadSavedStatesFromDB() {
+            try {
+                const states = await db.getAllSavedStates(MAX_SAVED_STATES);
+                loadStateDbSelect.innerHTML = '<option value="">保存した状態を選択...</option>';
+                deleteStateDbSelect.innerHTML = '<option value="">削除する状態を選択...</option>';
+                
+                states.forEach(state => {
+                    const option = new Option(`${state.name} (${new Date(state.timestamp).toLocaleString()})`, state.id);
+                    loadStateDbSelect.add(option.cloneNode(true));
+                    deleteStateDbSelect.add(option);
+                });
+            } catch (error) {
+                console.error("保存済み状態の読み込みに失敗:", error);
+                showMessage("保存済み状態の読み込みに失敗しました。", "error");
+            }
+        }
+        
+        async function handleLoadStateFromDB() {
+            const stateId = loadStateDbSelect.value;
+            if (!stateId) return;
+            
+            try {
+                const stateData = await db.getSavedState(stateId);
+                if (stateData) {
+                    restoreState(stateData.data);
+                    renderParticipantList();
+                    renderCarList();
+                    renderExclusionList();
+                    showMessage(`状態「${stateData.name}」を読み込みました。`, 'info');
+                } else {
+                    showMessage("指定された状態が見つかりません。", "error");
+                }
+            } catch (error) {
+                console.error("状態の読み込みに失敗:", error);
+                showMessage("状態の読み込みに失敗しました。", "error");
+            }
+        }
+
+        async function handleDeleteStateFromDB() {
+            const stateId = deleteStateDbSelect.value;
+            if (!stateId) return;
+            
+            const stateName = deleteStateDbSelect.options[deleteStateDbSelect.selectedIndex].text;
+            if (!confirm(`本当に状態「${stateName}」を削除しますか？`)) {
+                return;
+            }
+
+            try {
+                await db.deleteSavedState(stateId);
+                await loadSavedStatesFromDB(); // ドロップダウンを更新
+                showMessage(`状態「${stateName}」を削除しました。`, 'info');
+            } catch (error) {
+                console.error("状態の削除に失敗:", error);
+                showMessage("状態の削除に失敗しました。", "error");
+            }
+        }
+
+        async function trimOldSavedStates() {
+            try {
+                const states = await db.getAllSavedStates(999); // 全件取得
+                if (states.length > MAX_SAVED_STATES) {
+                    const statesToDelete = states.slice(MAX_SAVED_STATES); // 古いもの
+                    for (const state of statesToDelete) {
+                        await db.deleteSavedState(state.id);
+                    }
+                }
+            } catch (error) {
+                console.error("古い状態の削除に失敗:", error);
+            }
+        }
+        
+        // --- 駐車場DB操作 ---
+        
+        // ★ 修正: 駐車場保存
+        async function handleSaveParkingToDB() {
+            const currentGroundName = groundNameEl.value || '';
+            const currentDesignatedName = parkingDesignatedNameEl.value || '';
+            
+            const defaultName = currentGroundName ? `${currentGroundName} (${currentDesignatedName})` : `駐車場 ${new Date().toLocaleString()}`;
+            const name = prompt("この駐車場設定の保存名を入力してください:", defaultName);
+            if (!name) return;
+
+            const parkingData = {
+                id: `parking_${Date.now()}`,
+                timestamp: Date.now(),
+                name: name, // ★ 保存名
+                groundName: groundNameEl.value,
+                designatedName: parkingDesignatedNameEl.value,
+                limit: parseInt(parkingDesignatedLimitEl.value, 10) || 999,
+                designatedMemo: parkingDesignatedMemoEl.value,
+                otherName: parkingOtherNameEl.value,
+                otherMemo: parkingOtherMemoEl.value
+            };
+            
+            try {
+                await db.addSavedParking(parkingData);
+                await trimOldSavedParking();
+                await loadSavedParkingFromDB();
+                showMessage(`駐車場「${name}」をDBに保存しました。`, 'info');
+            } catch (error) {
+                console.error("駐車場のDB保存に失敗:", error);
+                showMessage("駐車場のDB保存に失敗しました。", "error");
+            }
+        }
+        
+        // ★ 修正: 駐車場読み込み (ソート修正)
+        async function loadSavedParkingFromDB() {
+            try {
+                const parkingList = await db.getAllSavedParking(MAX_SAVED_PARKING);
+                loadParkingDbSelect.innerHTML = '<option value="">保存した駐車場を選択...</option>';
+                deleteParkingDbSelect.innerHTML = '<option value="">削除する駐車場を選択...</option>';
+                
+                parkingList.forEach(p => {
+                    const option = new Option(`${p.name} (${new Date(p.timestamp).toLocaleString()})`, p.id);
+                    loadParkingDbSelect.add(option.cloneNode(true));
+                    deleteParkingDbSelect.add(option);
+                });
+            } catch (error) {
+                console.error("保存済み駐車場の読み込みに失敗:", error);
+                showMessage("保存済み駐車場の読み込みに失敗しました。", "error");
+            }
+        }
+        
+        // ★ 修正: 駐車場反映
+        async function handleLoadParkingFromDB() {
+            const parkingId = loadParkingDbSelect.value;
+            if (!parkingId) return;
+            
+            try {
+                const pData = await db.getSavedParking(parkingId);
+                if (pData) {
+                    groundNameEl.value = pData.groundName || '';
+                    parkingDesignatedNameEl.value = pData.designatedName || '';
+                    parkingDesignatedLimitEl.value = pData.limit || '';
+                    parkingDesignatedMemoEl.value = pData.designatedMemo || '';
+                    parkingOtherNameEl.value = pData.otherName || '';
+                    parkingOtherMemoEl.value = pData.otherMemo || '';
+                    
+                    showMessage(`駐車場「${pData.name}」を読み込みました。`, 'info');
+                } else {
+                    showMessage("指定された駐車場データが見つかりません。", "error");
+                }
+            } catch (error) {
+                console.error("駐車場データの読み込みに失敗:", error);
+                showMessage("駐車場データの読み込みに失敗しました。", "error");
+            }
+        }
+        
+        // ★ 新規: 駐車場削除
+        async function handleDeleteParkingFromDB() {
+            const parkingId = deleteParkingDbSelect.value;
+            if (!parkingId) return;
+            
+            const parkingName = deleteParkingDbSelect.options[deleteParkingDbSelect.selectedIndex].text;
+            if (!confirm(`本当に駐車場「${parkingName}」を削除しますか？`)) {
+                return;
+            }
+
+            try {
+                await db.deleteSavedParking(parkingId);
+                await loadSavedParkingFromDB(); // ドロップダウンを更新
+                showMessage(`駐車場「${parkingName}」を削除しました。`, 'info');
+            } catch (error) {
+                console.error("駐車場の削除に失敗:", error);
+                showMessage("駐車場の削除に失敗しました。", "error");
+            }
+        }
+
+        async function trimOldSavedParking() {
+            try {
+                const parkingList = await db.getAllSavedParking(999); // 全件取得
+                if (parkingList.length > MAX_SAVED_PARKING) {
+                    const parkingToDelete = parkingList.slice(MAX_SAVED_PARKING); // 古いもの
+                    for (const p of parkingToDelete) {
+                        await db.deleteSavedParking(p.id);
+                    }
+                }
+            } catch (error) {
+                console.error("古い駐車場の削除に失敗:", error);
+            }
+        }
+        
+        // ★ 新規: DB初期化
+        async function handleResetDB() {
+            if (!confirm("本当にすべてのデータ（マスターデータ、保存した状態、保存した駐車場）を削除し、アプリを初期状態に戻しますか？\nこの操作は元に戻せません。")) {
+                return;
+            }
+            
+            try {
+                await db.clearAllData();
+                console.log("データベースをクリアしました。");
+                
+                // デフォルトデータを再挿入
+                await db.bulkAddFamilies(DEFAULT_FAMILIES);
+                await db.bulkAddCars(DEFAULT_AVAILABLE_CARS_INFO);
+                await db.bulkAddParking(DEFAULT_PARKING_INFO);
+                console.log("デフォルトデータを再挿入しました。");
+
+                // 状態をリセットしてリロード
+                restoreState({});
+                
+                showMessage("データベースを初期化しました。ページをリロードします。", 'info');
+                
+                // サービスワーカーのキャッシュもクリア（PWA対応）
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => caches.delete(key)));
+                    console.log("Service Worker キャッシュをクリアしました。");
+                }
+                
+                // リロード
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+            } catch (error) {
+                console.error("DBのリセットに失敗:", error);
+                showMessage("データベースの初期化に失敗しました。", "error");
+            }
+        }
+
+    </script>
+
+</body>
+</html>
+
