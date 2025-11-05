@@ -114,11 +114,11 @@
                     
                     <!-- 状態の読み込みドロップダウン -->
                     <div class="flex rounded-lg shadow-sm">
-                        <select id="load-state-db-select" class="block w-full py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                <option value="">保存した状態を選択...</option>
+                        <select id="load-state-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="">保存した状態を選択...</option>
                             <!-- JSで描画 -->
                         </select>
-                        <select id="delete-state-db-select" class="block w-full py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <button id="load-state-db-button" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-3 rounded-r-md transition duration-200">
                             読込
                         </button>
                     </div>
@@ -202,7 +202,7 @@
                              </button>
                              <!-- 駐車場の読み込み -->
                              <div class="flex rounded-lg shadow-sm">
-                                <select id="load-parking-db-select" class="block w-full py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                 <select id="load-parking-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                      <option value="">保存した駐車場を選択...</option>
                                      <!-- JSで描画 -->
                                  </select>
@@ -212,7 +212,7 @@
                              </div>
                              <!-- 駐車場の削除 -->
                              <div class="flex rounded-lg shadow-sm">
-                                <select id="delete-parking-db-select" class="block w-full py-2 px-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                 <select id="delete-parking-db-select" class="block w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                      <option value="">削除する駐車場を選択...</option>
                                      <!-- JSで描画 -->
                                  </select>
@@ -308,8 +308,8 @@
         const LAYOUT_COLUMNS = 3; 
         
         // --- 状態保存の上限 ---
-        const MAX_SAVED_STATES = 50;
-        const MAX_SAVED_PARKING = 100;
+        const MAX_SAVED_STATES = 25;
+        const MAX_SAVED_PARKING = 50;
 
         // --- 事前定義データ (DB初期化用) ---
         
