@@ -171,14 +171,16 @@
                                 <span class="col-span-1 font-medium text-right" x-text="i + '番'"></span>
                                 <select x-model="game.starters[i-1].playerId" class="col-span-6 md:col-span-7 p-2 border rounded-md">
                                     <option value="">選手を選択</option>
-                                    <template x-for="player in players" :key="player.id">
-                                        <option :value="player.id" x-text="player.name + ' (' + (player.number || '?') + ')'"></option>
+                                    <!-- 修正: availablePlayers(i-1) を呼び出し、x-text を変更 -->
+                                    <template x-for="player in availablePlayers(i-1)" :key="player.id">
+                                        <option :value="player.id" x-text="(player.number || '?') + '.' + player.name"></option>
                                     </template>
                                 </select>
                                 <select x-model="game.starters[i-1].position" class="col-span-5 md:col-span-4 p-2 border rounded-md">
                                     <option value="">守備位置</option>
-                                    <template x-for="pos in positions" :key="pos.id">
-                                        <option :value="pos.id" x-text="pos.name + ' (' + pos.id + ')'"></option>
+                                    <!-- 修正: availablePositions(i-1) を呼び出し、x-text を変更 -->
+                                    <template x-for="pos in availablePositions(i-1)" :key="pos.id">
+                                        <option :value="pos.id" x-text="pos.id + '.' + pos.name"></option>
                                     </template>
                                 </select>
                             </div>
@@ -470,6 +472,37 @@
                         }
                     }
                 },
+
+                // --- 2つの新しい関数を追加 ---
+                availablePlayers(currentIndex) {
+                    // 全ての行で選択済みのIDセット
+                    const allSelectedIds = new Set(
+                        this.game.starters
+                            .map(s => s.playerId)
+                            .filter(id => id !== '')
+                    );
+                    // この行で現在選択されているID
+                    const currentPlayerId = this.game.starters[currentIndex].playerId;
+                    
+                    return this.players.filter(p => 
+                        !allSelectedIds.has(p.id) || p.id === currentPlayerId
+                    );
+                },
+                availablePositions(currentIndex) {
+                    // 全ての行で選択済みのIDセット
+                    const allSelectedIds = new Set(
+                        this.game.starters
+                            .map(s => s.position)
+                            .filter(id => id !== '')
+                    );
+                    // この行で現在選択されているID
+                    const currentPosId = this.game.starters[currentIndex].position;
+
+                    return this.positions.filter(p => 
+                        !allSelectedIds.has(p.id) || p.id === currentPosId
+                    );
+                },
+                // --- 関数追加ここまで ---
 
                 // 選手マスタ関連
                 loadPlayers() {
