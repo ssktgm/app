@@ -78,16 +78,18 @@
              line-height: 1.25; /* text-xs */
         }
         
-        /* ★ 新規: 上部メニューを固定 */
-        #data-controls-section {
-            position: sticky;
-            top: 0;
-            z-index: 50; /* 他要素より上に来るように */
-            border-bottom: 1px solid #e5e7eb; /* 境界線を明確に */
-        }
-        body {
-            /* スティッキーヘッダーのジャンプ対策（アンカーリンクがあれば） */
-            scroll-padding-top: 10rem; /* ヘッダーの高さに応じて調整 */
+        /* ★ 修正: 上部メニューをPCでのみ固定 */
+        @media (min-width: 768px) { /* md: breakpoint */
+            #data-controls-section {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            body {
+                /* スティッキーヘッダーのジャンプ対策（アンカーリンクがあれば） */
+                scroll-padding-top: 10rem; /* ヘッダーの高さに応じて調整 */
+            }
         }
 
 
