@@ -108,7 +108,7 @@ async function update(storeName, item) {
 async function remove(storeName, key) {
     return performTransaction(storeName, 'readwrite', store => store.delete(key));
 }
-async function clearStore(storeName) {
+export async function clearStore(storeName) {
     return performTransaction(storeName, 'readwrite', store => store.clear());
 }
 async function bulkAdd(storeName, items) {
