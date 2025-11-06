@@ -6,11 +6,7 @@
     <title>野球アナウンスシート</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 修正: 'defer' 属性を <script> タグに正しく追加します -->
-    <!-- これにより、HTMLの読み込み完了後にAlpine.jsが実行されるようになります -->
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <style>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script> <style>
         /* Alpine.jsの初期化中（読み込み中）の要素を隠す */
         [x-cloak] { display: none !important; }
         /* タブの基本的なスタイル */
@@ -51,13 +47,11 @@
 
     <div class="max-w-7xl mx-auto min-h-screen bg-white shadow-lg">
         
-        <!-- ヘッダー -->
         <header class="bg-blue-600 text-white p-6 shadow-md">
             <h1 class="text-3xl font-bold">野球アナウンスシート</h1>
             <p class="text-xl">ありんこアントス</p>
         </header>
 
-        <!-- タブナビゲーション -->
         <nav class="flex border-b border-gray-300 bg-gray-50">
             <button @click="activeTab = 'master'" :class="{'active': activeTab === 'master'}" class="tab-button">
                 選手マスタ管理
@@ -70,10 +64,8 @@
             </button>
         </nav>
 
-        <!-- メインコンテンツエリア -->
         <main class="p-4 md:p-8">
 
-            <!-- 通知メッセージ -->
             <div x-show="message.text" x-cloak
                  class="p-4 mb-4 rounded-md"
                  :class="{
@@ -84,11 +76,9 @@
                 <span x-text="message.text"></span>
             </div>
 
-            <!-- 1. 選手マスタ管理タブ -->
             <div x-show="activeTab === 'master'" x-cloak>
                 <h2 class="text-2xl font-semibold mb-4">選手マスタ管理</h2>
                 
-                <!-- 選手追加フォーム -->
                 <div class="bg-gray-50 p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
                     <h3 class="text-xl font-medium mb-4">選手登録</h3>
                     <form @submit.prevent="addPlayer" class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -102,7 +92,6 @@
                     </form>
                 </div>
 
-                <!-- データ管理 (インポート/エクスポート) -->
                 <div class="flex items-center space-x-2 mb-6">
                     <button @click="exportPlayers" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-150">
                         JSONダウンロード
@@ -113,7 +102,6 @@
                     </label>
                 </div>
 
-                <!-- 選手一覧 -->
                 <div class="overflow-x-auto shadow-md rounded-lg border border-gray-200">
                     <table class="min-w-full divide-y divide-gray-200 bg-white">
                         <thead class="bg-gray-100">
@@ -147,21 +135,17 @@
                 </div>
             </div>
 
-            <!-- 2. 試合設定タブ -->
             <div x-show="activeTab === 'setup'" x-cloak>
                 <h2 class="text-2xl font-semibold mb-4">試合設定</h2>
 
-                <!-- 試合情報 -->
                 <div class="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
                     <h3 class="text-xl font-medium mb-4">試合情報</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- 対戦相手 -->
                         <div>
                             <label for="opponentName" class="block text-sm font-medium text-gray-700 mb-1">対戦相手</label>
                             <input type="text" id="opponentName" x-model="game.opponentName" placeholder="対戦相手チーム名" class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
                         </div>
 
-                        <!-- 先攻/後攻 -->
                         <fieldset>
                             <legend class="block text-sm font-medium text-gray-700 mb-1">先攻 / 後攻</legend>
                             <div class="flex items-center space-x-4 mt-2">
@@ -176,7 +160,6 @@
                             </div>
                         </fieldset>
 
-                        <!-- 一塁側/三塁側 -->
                         <fieldset>
                             <legend class="block text-sm font-medium text-gray-700 mb-1">一塁側 / 三塁側</legend>
                             <div class="flex items-center space-x-4 mt-2">
@@ -192,7 +175,6 @@
                         </fieldset>
                     </div>
 
-                    <!-- 審判員 -->
                     <div class="mt-6">
                         <h4 class="text-lg font-medium text-gray-800 mb-3">審判員</h4>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -204,17 +186,14 @@
                     </div>
                 </div>
 
-                <!-- メンバー設定 -->
                 <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                     <h3 class="text-xl font-medium mb-4">メンバー設定</h3>
                     
-                    <!-- スターティングメンバー -->
                     <h4 class="text-lg font-medium text-gray-800 mb-3">スターティングメンバー (1〜9番)</h4>
                     <div class="space-y-3 mb-6">
                         <template x-for="(starter, i) in game.starters" :key="i">
                             <div class="grid grid-cols-12 gap-2 items-center">
                                 <span class="col-span-1 text-sm font-medium text-gray-700 text-right pr-2" x-text="`${i + 1}番`"></span>
-                                <!-- 選手選択 -->
                                 <div class="col-span-6 md:col-span-5">
                                     <select x-model="starter.playerId" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
                                         <option value="">選手を選択</option>
@@ -223,7 +202,6 @@
                                         </template>
                                     </select>
                                 </div>
-                                <!-- 守備位置選択 -->
                                 <div class="col-span-5 md:col-span-4">
                                     <select x-model="starter.position" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
                                         <option value="">守備位置</option>
@@ -236,7 +214,6 @@
                         </template>
                     </div>
 
-                    <!-- 控え選手 -->
                     <h4 class="text-lg font-medium text-gray-800 mb-3">控え選手</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                         <template x-for="player in benchPlayers" :key="player.id">
@@ -248,7 +225,6 @@
                     </div>
                 </div>
 
-                <!-- 設定完了ボタン -->
                 <div class="mt-8 flex justify-end">
                     <button @click="confirmLineup" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition duration-150 text-lg">
                         試合開始 (アナウンスシートへ)
@@ -256,10 +232,8 @@
                 </div>
             </div>
 
-            <!-- 3. アナウンスシートタブ -->
             <div x-show="activeTab === 'sheet'" x-cloak>
                 
-                <!-- サブタブ -->
                 <div class="flex space-x-2 mb-6">
                     <button @click="sheetSubTab = 'progress'" :class="{'active': sheetSubTab === 'progress'}" class="subtab-button">
                         試合進行
@@ -269,15 +243,12 @@
                     </button>
                 </div>
 
-                <!-- 3a. 試合進行 サブタブ -->
                 <div x-show="sheetSubTab === 'progress'">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         
-                        <!-- 試合状況カラム -->
                         <div class="md:col-span-1 space-y-4">
                             <h3 class="text-xl font-semibold mb-2">試合状況</h3>
                             
-                            <!-- スコアボード -->
                             <div class="bg-gray-800 text-white p-4 rounded-lg shadow-md">
                                 <div class="flex justify-between items-center mb-2">
                                     <span class="text-lg" x-text="game.myTeamAttack === 'first' ? 'ありんこアントス' : (game.opponentName || '対戦相手')"></span>
@@ -292,7 +263,6 @@
                                 </div>
                             </div>
                             
-                            <!-- イニング操作 -->
                             <div class="bg-white p-4 rounded-lg shadow border">
                                 <h4 class="font-medium mb-2">イニング操作</h4>
                                 <div class="flex items-center space-x-2">
@@ -302,7 +272,6 @@
                                 </div>
                             </div>
 
-                            <!-- スコア操作 -->
                             <div class="bg-white p-4 rounded-lg shadow border">
                                 <h4 class="font-medium mb-2">スコア操作</h4>
                                 <div class="flex justify-between items-center mb-2">
@@ -324,11 +293,9 @@
                             </div>
                         </div>
 
-                        <!-- アナウンス生成カラム -->
                         <div class="md:col-span-2 space-y-4">
                             <h3 class="text-xl font-semibold mb-2">アナウンス生成</h3>
                             
-                            <!-- 試合前 -->
                             <div class="bg-white p-4 rounded-lg shadow border">
                                 <h4 class="text-lg font-medium mb-3">試合前</h4>
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -341,7 +308,6 @@
                                 </div>
                             </div>
                             
-                            <!-- イニング -->
                             <div class="bg-white p-4 rounded-lg shadow border">
                                 <h4 class="text-lg font-medium mb-3">イニング</h4>
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -351,7 +317,6 @@
                                 </div>
                             </div>
 
-                            <!-- 試合終了 -->
                             <div class="bg-white p-4 rounded-lg shadow border">
                                 <h4 class="text-lg font-medium mb-3">試合終了</h4>
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -362,15 +327,12 @@
                     </div>
                 </div>
 
-                <!-- 3b. 選手交代 サブタブ -->
                 <div x-show="sheetSubTab === 'change'">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                        <!-- 左カラム: スタメン・控え -->
                         <div>
                             <h3 class="text-xl font-semibold mb-4">現在のラインナップ</h3>
                             
-                            <!-- スタメン -->
                             <div class="bg-white p-4 rounded-lg shadow border mb-6">
                                 <h4 class="text-lg font-medium mb-3">スターティングメンバー</h4>
                                 <ul class="divide-y divide-gray-200">
@@ -385,7 +347,6 @@
                                 </ul>
                             </div>
 
-                            <!-- 控え -->
                             <div class="bg-white p-4 rounded-lg shadow border">
                                 <h4 class="text-lg font-medium mb-3">控え選手</h4>
                                 <div class="flex flex-wrap gap-2">
@@ -399,11 +360,9 @@
                             </div>
                         </div>
 
-                        <!-- 右カラム: 交代フォーム -->
                         <div class="space-y-6">
                             <h3 class="text-xl font-semibold mb-4">交代アナウンス</h3>
 
-                            <!-- 守備位置の交代 -->
                             <div class="change-section">
                                 <h4 class="text-lg font-medium mb-3">守備位置の交代</h4>
                                 <p class="text-sm text-gray-600 mb-2">例: 4-1-5-2 (セカンド→ピッチャー→サード→キャッチャー→セカンド)</p>
@@ -413,7 +372,6 @@
                                 </div>
                             </div>
 
-                            <!-- 選手の交代 (守備) -->
                             <div class="change-section">
                                 <h4 class="text-lg font-medium mb-3">選手の交代 (守備から)</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
@@ -447,7 +405,6 @@
                                 </div>
                             </div>
                             
-                            <!-- 代打 -->
                             <div class="change-section">
                                 <h4 class="text-lg font-medium mb-3">代打</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
@@ -473,17 +430,15 @@
                                 <button @click="generatePinchHitter" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition">代打アナウンス生成</button>
                             </div>
 
-                            <!-- 代走 -->
                             <div class="change-section">
                                 <h4 class="text-lg font-medium mb-3">代走</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">交代する走者 (OUT)</label>
                                         <select x-model="changeForms.pinchRunner.outPlayerId" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
-                                            <option value="">(選手を選択)</option>
-                                            <!-- 代走はスタメン/控え関係なく交代可能性があるため全員から選ぶ -->
-                                            <template x-for="player in players" :key="player.id">
-                                                <option :value="player.id" x-text="player.name"></option>
+                                            <option value="">(現在の走者を選択)</option>
+                                            <template x-for="starter in lineup.starters" :key="starter.playerId">
+                                                <option :value="starter.playerId" x-text="`${getBattingOrder(starter.playerId)}番: ${getPlayerName(starter.playerId)}`"></option>
                                             </template>
                                         </select>
                                     </div>
@@ -511,7 +466,6 @@
                     </div>
                 </div>
 
-                <!-- 共通: アナウンス結果表示 -->
                 <div x-show="announcement" x-cloak class="mt-8">
                     <h3 class="text-xl font-semibold mb-3">アナウンス原稿</h3>
                     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-6 rounded-lg shadow-md">
@@ -522,12 +476,9 @@
                     </div>
                 </div>
 
-            </div> <!-- End of 'sheet' tab -->
-
-        </main>
+            </div> </main>
     </div>
 
-    <!-- Alpine.jsデータとロジック -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('appData', () => ({
@@ -636,10 +587,26 @@
                     const index = this.lineup.starters.findIndex(s => s.playerId === playerId);
                     return index !== -1 ? index + 1 : null;
                 },
-                // クリップボードにコピー (execCommand バージョン)
-                // try...catch...finallyで囲む
-                copyToClipboard(text) {
+
+                // ★修正2: クリップボードへのコピー機能を async/await を使った現代的なものに更新
+                // 成功しなかった場合は、元の execCommand をフォールバックとして使用
+                async copyToClipboard(text) {
                     if (!text) return;
+                    
+                    // --- Modern Clipboard API (Recommended) ---
+                    // (HTTPS または localhost でのみ動作)
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        try {
+                            await navigator.clipboard.writeText(text);
+                            this.showMessage('クリップボードにコピーしました。');
+                            return; // 成功したら終了
+                        } catch (err) {
+                            console.warn('Async clipboard copy failed, falling back...', err);
+                            // APIが失敗した場合、フォールバックを試みる
+                        }
+                    }
+
+                    // --- Fallback for older browsers or insecure contexts (file://, http://) ---
                     const textarea = document.createElement('textarea');
                     textarea.value = text;
                     textarea.style.position = 'fixed'; // 画面外に
@@ -665,13 +632,14 @@
                             this.showMessage('コピーに失敗しました。', 'error');
                         }
                     } catch (e) {
-                        console.error('Copy to clipboard failed:', e);
+                        console.error('Legacy copy to clipboard failed:', e);
                         this.showMessage('コピーに失敗しました。', 'error');
                     } finally {
                         // 成功・失敗に関わらず、必ずtextareaを削除する
                         document.body.removeChild(textarea);
                     }
                 },
+                
                 // ソート関数 (背番号 -> ふりがな -> 名前 -> ID)
                 // NaN チェックを追加
                 sortPlayers(players) {
@@ -848,7 +816,7 @@
                         {id: "11", name: "近藤 謙成", furigana: "コンドウ ケンセイ", number: 11, grade: "3年"},
                         {id: "12", name: "知野見 怜央", furigana: "チノミ レオ", number: 12, grade: "3年"},
                         {id: "13", name: "藤山 琉杜", furigana: "トウヤマ リュウト", number: 13, grade: "3年"},
-                        {id: "14", name: "小河原  維", furigana: "オガワラ タモツ", number: 14, grade: "3年"},
+                        {id: "14", name: "小河原  維", furigana: "オガワラ タモツ", number: 14, grade: "3年"},
                         {id: "15", name: "古川 峻丞", furigana: "フルカワ シュンスケ", number: 15, grade: "2年"},
                         {id: "16", name: "坪井 雄也", furigana: "ツボイ ユウヤ", number: 16, grade: "1年"},
                         {id: "17", name: "近藤 茉莉", furigana: "コンドウ マツリ", number: 17, grade: "1年"}
@@ -1127,9 +1095,9 @@
                         text += `(${order1 || ' '})番、(${secondLast.posName || ' '})、(${secondLast.playerName || ' '})くん。\n`;
                         text += `(${order2 || ' '})番、(${last.posName || ' '})、(${last.playerName || ' '})くん。\n`;
                     } else if (changes.length === 1) { 
-                         const change = changes[0];
-                         const order = this.getBattingOrder(change.playerId);
-                         text += `(${order || ' '})番、(${change.posName || ' '})、(${change.playerName || ' '})くん。\n`;
+                        const change = changes[0];
+                        const order = this.getBattingOrder(change.playerId);
+                        text += `(${order || ' '})番、(${change.posName || ' '})、(${change.playerName || ' '})くん。\n`;
                     }
                     
                     // lineupデータも更新 (重要)
@@ -1242,6 +1210,7 @@
                     text += `【代走】 (${base})塁走者、(${outPlayer.name})くんに代わりまして、代走 (${inPlayer.name})くん、背番号 (${inPlayer.number || ' '})。`;
                     
                     // lineupデータ更新 (代走)
+                    // ★修正3: outPlayerId は 'lineup.starters' から来ているはずなので、starterIndex は必ず見つかる
                     const starterIndex = this.lineup.starters.findIndex(s => s.playerId === outPlayerId);
                     if (starterIndex !== -1) {
                         // スタメンが交代
@@ -1251,13 +1220,10 @@
                         this.lineup.bench = this.lineup.bench.filter(id => id !== inPlayerId);
                         this.lineup.bench.push(outPlayerId);
                     } else {
-                        // スタメン以外の選手(例: 代打で出た選手)が交代
-                        // このロジックは簡略化のため、控え同士の交代はデータに反映しない (アナウンスのみ)
-                        this.lineup.bench = this.lineup.bench.filter(id => id !== inPlayerId);
-                        // OUT選手が控えにいない場合は、追加する
-                        if (!this.lineup.bench.includes(outPlayerId)) {
-                             this.lineup.bench.push(outPlayerId);
-                        }
+                        // この 'else' ブロックは、修正により到達しなくなるはず
+                        console.error("代走ロジックエラー: 交代対象の選手がスタメンに見つかりません。", outPlayerId);
+                        this.showMessage('代走ロジックエラーが発生しました。', 'error');
+                        return;
                     }
                     
                     this.announcement = text;
