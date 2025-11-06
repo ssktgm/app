@@ -1102,8 +1102,12 @@ https://maps.app.goo.gl/..."></textarea>
         }
         function showMessage(message, type = 'info'){ 
             messageText.innerHTML = message; 
-            // ★ 修正: mb-4 (margin-bottom) は不要になったため削除
-            messageContainer.className = 'p-4 h-full border rounded-lg'; 
+            
+            // ★ 修正: 「h-full」を削除し、「max-h-48 overflow-y-auto」を追加
+            // これにより、ボックスの高さが最大12rem(192px)に制限され、
+            // 超えた場合はスクロールバーが表示されます。
+            messageContainer.className = 'p-4 border rounded-lg max-h-48 overflow-y-auto'; 
+            
             switch(type) {
                 case 'error': messageContainer.classList.add('bg-red-100', 'border-red-400', 'text-red-700'); break;
                 case 'warning': messageContainer.classList.add('bg-yellow-100', 'border-yellow-400', 'text-yellow-700'); break;
