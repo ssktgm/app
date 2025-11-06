@@ -473,36 +473,32 @@
                     }
                 },
 
-                // --- 2つの新しい関数を追加 ---
+                // --- 2つの関数をロジック変更 ---
                 availablePlayers(currentIndex) {
-                    // 全ての行で選択済みのIDセット
-                    const allSelectedIds = new Set(
+                    // 「currentIndex」以外の行で選択済みのIDセット
+                    const otherSelectedIds = new Set(
                         this.game.starters
+                            .filter((_, index) => index !== currentIndex) // 自分以外の行
                             .map(s => s.playerId)
                             .filter(id => id !== '')
                     );
-                    // この行で現在選択されているID
-                    const currentPlayerId = this.game.starters[currentIndex].playerId;
                     
-                    return this.players.filter(p => 
-                        !allSelectedIds.has(p.id) || p.id === currentPlayerId
-                    );
+                    // 他の行で選択されて *いない* 選手のみを返す
+                    return this.players.filter(p => !otherSelectedIds.has(p.id));
                 },
                 availablePositions(currentIndex) {
-                    // 全ての行で選択済みのIDセット
-                    const allSelectedIds = new Set(
+                    // 「currentIndex」以外の行で選択済みのIDセット
+                    const otherSelectedIds = new Set(
                         this.game.starters
+                            .filter((_, index) => index !== currentIndex) // 自分以外の行
                             .map(s => s.position)
                             .filter(id => id !== '')
                     );
-                    // この行で現在選択されているID
-                    const currentPosId = this.game.starters[currentIndex].position;
-
-                    return this.positions.filter(p => 
-                        !allSelectedIds.has(p.id) || p.id === currentPosId
-                    );
+                    
+                    // 他の行で選択されて *いない* ポジションのみを返す
+                    return this.positions.filter(p => !otherSelectedIds.has(p.id));
                 },
-                // --- 関数追加ここまで ---
+                // --- 関数変更ここまで ---
 
                 // 選手マスタ関連
                 loadPlayers() {
@@ -514,14 +510,23 @@
                         this.players = this.getDefaultPlayers();
                         this.savePlayers(false); // メッセージなしで初回保存
                     }
-                    // ★ 修正: ロード時にもソートを実行
+                    // ★ 修正: ソート順を 背番号 -> ふりがな -> 名前 -> ID に変更
                     this.players.sort((a, b) => {
+                        const numA = (a.number === null || a.number === undefined || a.number === '') ? Infinity : Number(a.number);
+                        const numB = (b.number === null || b.number === undefined || b.number === '') ? Infinity : Number(b.number);
+                        
+                        if (numA !== numB) {
+                            return numA - numB; // 背番号で昇順ソート
+                        }
+                        
                         const furiganaA = a.furigana || a.name;
                         const furiganaB = b.furigana || b.name;
                         if (furiganaA < furiganaB) return -1;
                         if (furiganaA > furiganaB) return 1;
+
                         if (a.name < b.name) return -1;
                         if (a.name > b.name) return 1;
+                        
                         return a.id.localeCompare(b.id);
                     });
                 },
@@ -565,14 +570,23 @@
                     });
                     this.newPlayer = { name: '', furigana: '', number: null, grade: '' };
                     this.savePlayers(); // メッセージありで保存 (デフォルト)
-                    // 選手リストを名前のふりがなでソート (ふりがな -> 名前 -> ID)
+                    // ★ 修正: ソート順を 背番号 -> ふりがな -> 名前 -> ID に変更
                     this.players.sort((a, b) => {
+                        const numA = (a.number === null || a.number === undefined || a.number === '') ? Infinity : Number(a.number);
+                        const numB = (b.number === null || b.number === undefined || b.number === '') ? Infinity : Number(b.number);
+                        
+                        if (numA !== numB) {
+                            return numA - numB; // 背番号で昇順ソート
+                        }
+
                         const furiganaA = a.furigana || a.name;
                         const furiganaB = b.furigana || b.name;
                         if (furiganaA < furiganaB) return -1;
                         if (furiganaA > furiganaB) return 1;
+
                         if (a.name < b.name) return -1;
                         if (a.name > b.name) return 1;
+                        
                         return a.id.localeCompare(b.id);
                     });
                 },
