@@ -171,15 +171,15 @@
                                 <span class="col-span-1 font-medium text-right" x-text="i + '番'"></span>
                                 <select x-model="game.starters[i-1].playerId" class="col-span-6 md:col-span-7 p-2 border rounded-md">
                                     <option value="">選手を選択</option>
-                                    <!-- 修正: availablePlayers(i-1) を呼び出し、x-text を変更 -->
-                                    <template x-for="player in availablePlayers(i-1)" :key="player.id">
+                                    <!-- 修正: key に i (行インデックス) を追加 -->
+                                    <template x-for="player in availablePlayers(i-1)" :key="i + '-' + player.id">
                                         <option :value="player.id" x-text="(player.number || '?') + '.' + player.name"></option>
                                     </template>
                                 </select>
                                 <select x-model="game.starters[i-1].position" class="col-span-5 md:col-span-4 p-2 border rounded-md">
                                     <option value="">守備位置</option>
-                                    <!-- 修正: availablePositions(i-1) を呼び出し、x-text を変更 -->
-                                    <template x-for="pos in availablePositions(i-1)" :key="pos.id">
+                                    <!-- 修正: key に i (行インデックス) を追加 -->
+                                    <template x-for="pos in availablePositions(i-1)" :key="i + '-' + pos.id">
                                         <option :value="pos.id" x-text="pos.id + '.' + pos.name"></option>
                                     </template>
                                 </select>
@@ -514,6 +514,16 @@
                         this.players = this.getDefaultPlayers();
                         this.savePlayers(false); // メッセージなしで初回保存
                     }
+                    // ★ 修正: ロード時にもソートを実行
+                    this.players.sort((a, b) => {
+                        const furiganaA = a.furigana || a.name;
+                        const furiganaB = b.furigana || b.name;
+                        if (furiganaA < furiganaB) return -1;
+                        if (furiganaA > furiganaB) return 1;
+                        if (a.name < b.name) return -1;
+                        if (a.name > b.name) return 1;
+                        return a.id.localeCompare(b.id);
+                    });
                 },
                 getDefaultPlayers() { // 新しく追加
                     // PDF (令和7年新人戦大会登録書) のデータ
