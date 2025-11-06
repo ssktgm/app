@@ -5,27 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>野球アナウンスシート</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 
-      Alpine.js の defer 属性を削除します。
-      'defer' があると、DOMのパース後に実行されますが、
-      場合によっては 'alpine:init' イベントの発火タイミングに影響する可能性があるため、
-      より確実な即時読み込み（ただし<head>内なのでDOM構築よりは前）を試みます。
-      ただし、現代のブラウザでは <script defer> が推奨されるため、
-      これが根本原因である可能性は低いですが、エラー切り分けの一環として試みます。
-      
-      ...
-      
-      （自己修正）: やはり 'defer' は残すのがベストプラクティスです。
-      'Script error' は 'defer' が原因である可能性は極めて低く、
-      むしろ 'defer' がないと 'alpine:init' が 'body' より先に
-      実行されようとして問題を起こす可能性があります。
-      
-      元のコード:
-      <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-      
-      こちらを 'defer' なしに変更します。
-    -->
+    
+    <!-- 修正: 'defer' 属性を <script> タグに正しく追加します -->
+    <!-- これにより、HTMLの読み込み完了後にAlpine.jsが実行されるようになります -->
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <style>
         /* Alpine.jsの初期化中（読み込み中）の要素を隠す */
         [x-cloak] { display: none !important; }
