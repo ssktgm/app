@@ -456,6 +456,9 @@
                 init() {
                     this.loadPlayers();
                     // ページリロード時に状態を復元（簡易的）
+                    // ★ 選手マスタのみを永続化し、試合設定はリロード時にリセットするため、
+                    // ★ 以下の game オブジェクトの復元処理をコメントアウト（削除）します。
+                    /*
                     const savedGame = localStorage.getItem('baseballApp_game');
                     if (savedGame) {
                         const parsedGame = JSON.parse(savedGame);
@@ -471,6 +474,7 @@
                             this.lineup.bench = [...this.game.bench];
                         }
                     }
+                    */
                 },
 
                 // --- 2つの関数をロジック変更 ---
@@ -680,7 +684,9 @@
                     this.lineup.bench = JSON.parse(JSON.stringify(this.game.bench));
                     
                     // ゲーム状態を保存
-                    localStorage.setItem('baseballApp_game', JSON.stringify(this.game));
+                    // ★ 選手マスタのみを永続化し、試合設定はリロード時にリセットするため、
+                    // ★ 以下の game オブジェクトの保存処理をコメントアウト（削除）します。
+                    // localStorage.setItem('baseballApp_game', JSON.stringify(this.game));
                     
                     this.activeTab = 'sheet';
                     this.announcement = ''; // アナウンスをリセット
