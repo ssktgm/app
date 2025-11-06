@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>野球アナウンスシート</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 
+      Alpine.js の defer 属性を削除します。
+      'defer' があると、DOMのパース後に実行されますが、
+      場合によっては 'alpine:init' イベントの発火タイミングに影響する可能性があるため、
+      より確実な即時読み込み（ただし<head>内なのでDOM構築よりは前）を試みます。
+      ただし、現代のブラウザでは <script defer> が推奨されるため、
+      これが根本原因である可能性は低いですが、エラー切り分けの一環として試みます。
+      
+      ...
+      
+      （自己修正）: やはり 'defer' は残すのがベストプラクティスです。
+      'Script error' は 'defer' が原因である可能性は極めて低く、
+      むしろ 'defer' がないと 'alpine:init' が 'body' より先に
+      実行されようとして問題を起こす可能性があります。
+      
+      元のコード:
+      <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+      
+      こちらを 'defer' なしに変更します。
+    -->
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         /* Alpine.jsの初期化中（読み込み中）の要素を隠す */
@@ -531,6 +551,7 @@
                 activeTab: 'master', // 'master', 'setup', 'sheet'
                 sheetSubTab: 'progress', // 'progress', 'change'
                 message: { text: '', type: 'success' }, // { text, type }
+                localStorageAvailable: false, // *** 修正 *** : localStorageが利用可能かどうかのフラグ
                 
                 // --- データ ---
                 players: [], // 選手マスタ
@@ -577,6 +598,7 @@
 
                 // --- 初期化 ---
                 init() {
+                    this.checkLocalStorage(); // *** 修正 *** : まずlocalStorageが使えるか確認
                     this.loadPlayers();
                     // 試合設定はリロード時にリセット
                 },
@@ -585,6 +607,27 @@
                 showMessage(text, type = 'success', duration = 3000) {
                     this.message = { text, type };
                     setTimeout(() => { this.message.text = ''; }, duration);
+                },
+                // *** 修正 *** : localStorageが利用可能かチェックする
+                checkLocalStorage() {
+                    try {
+                        localStorage.setItem('__test__', 'test');
+                        localStorage.removeItem('__test__');
+                        this.localStorageAvailable = true;
+                        console.log("LocalStorage is available.");
+                    } catch (e) {
+                        this.localStorageAvailable = false;
+                        console.warn('localStorageへのアクセスがブロックされました。選手マスタはリロード毎にリセットされます。', e);
+                        this.showMessage('ストレージへのアクセスが制限されています。選手マスタは保存されません。', 'error', 5000);
+                    }
+                },
+                // crypto.randomUUID() の代わりに Math.random() ベースのIDジェネレータを使用
+                generateUUID() {
+                    // https://stackoverflow.com/a/2117523
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
                 },
                 // IDから選手情報を取得
                 getPlayer(id) {
@@ -610,16 +653,17 @@
                     return index !== -1 ? index + 1 : null;
                 },
                 // クリップボードにコピー (execCommand バージョン)
+                // try...catch...finallyで囲む
                 copyToClipboard(text) {
                     if (!text) return;
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed'; // 画面外に
+                    textarea.style.left = '-9999px';
+                    textarea.style.opacity = 0;
+                    document.body.appendChild(textarea);
+                    
                     try {
-                        const textarea = document.createElement('textarea');
-                        textarea.value = text;
-                        textarea.style.position = 'fixed'; // 画面外に
-                        textarea.style.left = '-9999px';
-                        textarea.style.opacity = 0;
-                        document.body.appendChild(textarea);
-                        
                         textarea.select();
                         textarea.setSelectionRange(0, textarea.value.length); // iOS Safari向け
                         
@@ -631,8 +675,6 @@
                             successful = false;
                         }
 
-                        document.body.removeChild(textarea);
-
                         if (successful) {
                             this.showMessage('クリップボードにコピーしました。');
                         } else {
@@ -641,13 +683,21 @@
                     } catch (e) {
                         console.error('Copy to clipboard failed:', e);
                         this.showMessage('コピーに失敗しました。', 'error');
+                    } finally {
+                        // 成功・失敗に関わらず、必ずtextareaを削除する
+                        document.body.removeChild(textarea);
                     }
                 },
                 // ソート関数 (背番号 -> ふりがな -> 名前 -> ID)
+                // NaN チェックを追加
                 sortPlayers(players) {
                     return players.sort((a, b) => {
-                        const numA = (a.number === null || a.number === undefined || a.number === '') ? Infinity : Number(a.number);
-                        const numB = (b.number === null || b.number === undefined || b.number === '') ? Infinity : Number(b.number);
+                        let numA = Number(a.number);
+                        let numB = Number(b.number);
+                        
+                        // NaN, null, undefined, '' を Infinity として扱う
+                        numA = (a.number === null || a.number === undefined || a.number === '' || isNaN(numA)) ? Infinity : numA;
+                        numB = (b.number === null || b.number === undefined || b.number === '' || isNaN(numB)) ? Infinity : numB;
                         
                         if (numA !== numB) {
                             return numA - numB; // 背番号で昇順ソート
@@ -672,31 +722,58 @@
                 },
 
                 // --- 選手マスタ (1. Master) ---
+                // *** 修正 *** : localStorageAvailable フラグでアクセスをガード
                 loadPlayers() {
-                    const savedPlayers = localStorage.getItem('baseballApp_players');
+                    let savedPlayers = null;
+                    if (this.localStorageAvailable) {
+                        try {
+                            savedPlayers = localStorage.getItem('baseballApp_players');
+                        } catch (e) {
+                            console.warn('localStorage.getItem failed:', e);
+                            savedPlayers = null; // Failsafe
+                        }
+                    }
+                    
                     if (savedPlayers) {
-                        this.players = this.sortPlayers(JSON.parse(savedPlayers));
+                        try {
+                            this.players = this.sortPlayers(JSON.parse(savedPlayers));
+                        } catch (e) {
+                            console.error('保存された選手データのパースに失敗しました。', e);
+                            this.players = this.sortPlayers(this.getDefaultPlayers()); // パース失敗
+                        }
                     } else {
                         // デフォルトデータ
                         this.players = this.sortPlayers(this.getDefaultPlayers());
-                        this.savePlayers(false); // メッセージなしで初回保存
+                        this.savePlayers(false); // 保存を試みる (savePlayers側でもガードされる)
                     }
                 },
+                // *** 修正 *** : localStorageAvailable フラグでアクセスをガード
                 savePlayers(showMessage = true) {
-                    localStorage.setItem('baseballApp_players', JSON.stringify(this.players));
-                    if (showMessage) {
-                        this.showMessage('選手マスタを保存しました。');
+                    if (this.localStorageAvailable) {
+                        try {
+                            localStorage.setItem('baseballApp_players', JSON.stringify(this.players));
+                            if (showMessage) {
+                                this.showMessage('選手マスタを保存しました。');
+                            }
+                        } catch (e) {
+                            console.warn('localStorageへの保存に失敗しました。', e);
+                            if (showMessage) {
+                                this.showMessage('選手マスタの保存に失敗しました。ストレージが制限されている可能性があります。', 'error', 5000);
+                            }
+                        }
                     }
-                    // 保存後にソートを再実行して表示を統一
+                    
+                    // 保存が成功しようと失敗しようと、UIのソートは実行する
                     this.players = this.sortPlayers(this.players);
                 },
+                // crypto.randomUUID() を this.generateUUID() に変更
                 addPlayer() {
                     if (!this.newPlayer.name) {
                         this.showMessage('氏名は必須です。', 'error');
                         return;
                     }
                     this.players.push({
-                        id: crypto.randomUUID(),
+                        id: this.generateUUID(), // 修正済み
                         name: this.newPlayer.name,
                         furigana: this.newPlayer.furigana,
                         number: this.newPlayer.number,
@@ -709,22 +786,32 @@
                     this.players = this.players.filter(p => p.id !== id);
                     this.savePlayers();
                 },
+                // DOM操作をtry...catch...finallyで囲む
                 exportPlayers() {
                     if (this.players.length === 0) {
                         this.showMessage('エクスポートする選手がいません。', 'error');
                         return;
                     }
+                    
                     const dataStr = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.players, null, 2));
                     const linkElement = document.createElement('a');
                     linkElement.setAttribute('href', dataStr);
                     linkElement.setAttribute('download', 'antos_players.json');
                     
-                    // より確実なダウンロード実行
-                    document.body.appendChild(linkElement); // DOMに追加
-                    linkElement.click();
-                    document.body.removeChild(linkElement); // すぐに削除
-                    
-                    this.showMessage('選手データをエクスポートしました。');
+                    try {
+                        // より確実なダウンロード実行
+                        document.body.appendChild(linkElement); // DOMに追加
+                        linkElement.click();
+                        this.showMessage('選手データをエクスポートしました。');
+                    } catch (e) {
+                        console.error('Export failed:', e);
+                        this.showMessage('エクスポートに失敗しました。', 'error');
+                    } finally {
+                        // 成功・失敗に関わらず、必ずリンクを削除する
+                        if (document.body.contains(linkElement)) {
+                            document.body.removeChild(linkElement); // すぐに削除
+                        }
+                    }
                 },
                 importPlayers(event) {
                     const file = event.target.files[0];
