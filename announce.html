@@ -3,519 +3,649 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>野球アナウンスシート アプリ</title>
+    <title>野球アナウンスシート</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', 'Noto Sans JP', sans-serif;
-        }
-        [x-cloak] { display: none; }
+        /* Alpine.jsの初期化中（読み込み中）の要素を隠す */
+        [x-cloak] { display: none !important; }
+        /* タブの基本的なスタイル */
         .tab-button {
-            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #6b7280; /* gray-500 */
         }
-        .tab-button[aria-selected="true"] {
+        .tab-button.active {
             border-bottom-color: #3b82f6; /* blue-500 */
-            color: #3b82f6;
+            color: #3b82f6; /* blue-500 */
             font-weight: 600;
         }
-        .tab-button:not([aria-selected="true"]):hover {
-            background-color: #f3f4f6; /* gray-100 */
+        .subtab-button {
+            padding: 0.25rem 0.75rem;
+            cursor: pointer;
+            border: 1px solid #d1d5db; /* gray-300 */
+            color: #4b5563; /* gray-600 */
+            background-color: white;
+            border-radius: 0.375rem; /* rounded-md */
         }
-        select, input[type="text"], input[type="number"], input[type="file"] {
-            min-height: 42px;
+        .subtab-button.active {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            border-color: #3b82f6; /* blue-500 */
+        }
+        /* 交代フォームのセクションスタイル */
+        .change-section {
+            background-color: #f9fafb; /* gray-50 */
+            padding: 1rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid #e5e7eb; /* gray-200 */
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 p-4 md:p-8" x-data="announcementApp()">
-    <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
-        <header class="p-6 bg-blue-600 text-white shadow-md">
-            <h1 class="text-2xl md:text-3xl font-bold">野球アナウンスシート</h1>
-            <p class="text-blue-100">ありんこアントス</p>
+<body class="bg-gray-100 font-sans" x-data="appData()" x-init="init()">
+
+    <div class="max-w-7xl mx-auto min-h-screen bg-white shadow-lg">
+        
+        <!-- ヘッダー -->
+        <header class="bg-blue-600 text-white p-6 shadow-md">
+            <h1 class="text-3xl font-bold">野球アナウンスシート</h1>
+            <p class="text-xl">ありんこアントス</p>
         </header>
 
         <!-- タブナビゲーション -->
-        <div class="border-b border-gray-200">
-            <nav class="flex -mb-px px-4" aria-label="Tabs">
-                <button @click="activeTab = 'master'"
-                        :aria-selected="activeTab === 'master'"
-                        class="tab-button w-1/3 py-4 px-1 text-center border-b-2 border-transparent text-sm md:text-base font-medium text-gray-500 hover:text-gray-700">
-                    選手マスタ管理
-                </button>
-                <button @click="activeTab = 'settings'"
-                        :aria-selected="activeTab === 'settings'"
-                        class="tab-button w-1/3 py-4 px-1 text-center border-b-2 border-transparent text-sm md:text-base font-medium text-gray-500 hover:text-gray-700">
-                    試合設定
-                </button>
-                <button @click="activeTab = 'sheet'"
-                        :aria-selected="activeTab === 'sheet'"
-                        class="tab-button w-1/3 py-4 px-1 text-center border-b-2 border-transparent text-sm md:text-base font-medium text-gray-500 hover:text-gray-700">
-                    アナウンスシート
-                </button>
-            </nav>
-        </div>
+        <nav class="flex border-b border-gray-300 bg-gray-50">
+            <button @click="activeTab = 'master'" :class="{'active': activeTab === 'master'}" class="tab-button">
+                選手マスタ管理
+            </button>
+            <button @click="activeTab = 'setup'" :class="{'active': activeTab === 'setup'}" class="tab-button">
+                試合設定
+            </button>
+            <button @click="activeTab = 'sheet'" :class="{'active': activeTab === 'sheet'}" class="tab-button">
+                アナウンスシート
+            </button>
+        </nav>
 
+        <!-- メインコンテンツエリア -->
         <main class="p-4 md:p-8">
+
+            <!-- 通知メッセージ -->
+            <div x-show="message.text" x-cloak
+                 class="p-4 mb-4 rounded-md"
+                 :class="{
+                     'bg-green-100 border border-green-400 text-green-700': message.type === 'success',
+                     'bg-red-100 border border-red-400 text-red-700': message.type === 'error'
+                 }"
+                 x-transition>
+                <span x-text="message.text"></span>
+            </div>
+
             <!-- 1. 選手マスタ管理タブ -->
             <div x-show="activeTab === 'master'" x-cloak>
-                <h2 class="text-xl font-semibold mb-4">選手マスタ管理</h2>
-                <div class="grid md:grid-cols-2 gap-6">
-                    <!-- 選手登録フォーム -->
-                    <div class="bg-gray-50 p-4 rounded-lg border">
-                        <h3 class="text-lg font-medium mb-3">選手登録</h3>
-                        <form @submit.prevent="addPlayer">
-                            <div class="space-y-3">
-                                <input x-model="newPlayer.name" type="text" placeholder="名前 (例: 蟻ん子 太郎)" class="w-full p-2 border rounded-md" required>
-                                <input x-model="newPlayer.furigana" type="text" placeholder="ふりがな (例: ありんこ たろう)" class="w-full p-2 border rounded-md">
-                                <input x-model.number="newPlayer.number" type="number" placeholder="背番号" class="w-full p-2 border rounded-md" min="0">
-                                <input x-model="newPlayer.grade" type="text" placeholder="学年 (例: 6年)" class="w-full p-2 border rounded-md">
-                            </div>
-                            <button type="submit" class="mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition">
-                                選手を追加
-                            </button>
-                        </form>
-                    </div>
+                <h2 class="text-2xl font-semibold mb-4">選手マスタ管理</h2>
+                
+                <!-- 選手追加フォーム -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
+                    <h3 class="text-xl font-medium mb-4">選手登録</h3>
+                    <form @submit.prevent="addPlayer" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <input x-model="newPlayer.name" type="text" placeholder="氏名" required class="col-span-1 md:col-span-1 p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <input x-model="newPlayer.furigana" type="text" placeholder="ふりがな" class="col-span-1 md:col-span-1 p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <input x-model.number="newPlayer.number" type="number" placeholder="背番号" class="col-span-1 md:col-span-1 p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <input x-model="newPlayer.grade" type="text" placeholder="学年 (例: 5年)" class="col-span-1 md:col-span-1 p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <button type="submit" class="col-span-1 md:col-span-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-150">
+                            登録
+                        </button>
+                    </form>
+                </div>
 
-                    <!-- データ管理 -->
-                    <div class="bg-gray-50 p-4 rounded-lg border">
-                        <h3 class="text-lg font-medium mb-3">データ管理</h3>
-                        <div class="space-y-3">
-                            <button @click="exportPlayers" class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition">
-                                選手マスタをJSONでダウンロード
-                            </button>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">JSONファイルでアップロード</label>
-                                <input type="file" @change="importPlayers" accept=".json" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            </div>
-                        </div>
-                    </div>
+                <!-- データ管理 (インポート/エクスポート) -->
+                <div class="flex items-center space-x-2 mb-6">
+                    <button @click="exportPlayers" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-150">
+                        JSONダウンロード
+                    </button>
+                    <input type="file" id="importFile" @change="importPlayers($event)" accept="application/json" class="hidden">
+                    <label for="importFile" class="cursor-pointer bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-150">
+                        JSONアップロード
+                    </label>
                 </div>
 
                 <!-- 選手一覧 -->
-                <div class="mt-6">
-                    <h3 class="text-lg font-medium mb-3">選手一覧 (<span x-text="players.length"></span>名)</h3>
-                    <div class="overflow-x-auto border rounded-lg">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">名前 (ふりがな)</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">背番号</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">学年</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                <div class="overflow-x-auto shadow-md rounded-lg border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200 bg-white">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">背番号</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">氏名</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ふりがな</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">学年</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <template x-for="player in players" :key="player.id">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="player.number"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800" x-text="player.name"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="player.furigana"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="player.grade"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button @click="deletePlayer(player.id)" class="text-red-600 hover:text-red-900">削除</button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <template x-if="players.length === 0">
-                                    <tr>
-                                        <td colspan="4" class="px-4 py-4 text-center text-gray-500">選手が登録されていません</td>
-                                    </tr>
-                                </template>
-                                <template x-for="player in players" :key="player.id">
-                                    <tr>
-                                        <td class="px-4 py-4 whitespace-nowrap">
-                                            <div class="font-medium" x-text="player.name"></div>
-                                            <div class="text-sm text-gray-500" x-text="player.furigana"></div>
-                                        </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-gray-700" x-text="player.number"></td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-gray-700" x-text="player.grade"></td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-right">
-                                            <button @click="deletePlayer(player.id)" class="text-red-500 hover:text-red-700 font-medium">
-                                                削除
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
+                            </template>
+                            <template x-if="players.length === 0">
+                                <tr>
+                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">選手が登録されていません。</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- 2. 試合設定タブ -->
-            <div x-show="activeTab === 'settings'" x-cloak>
-                <h2 class="text-xl font-semibold mb-4">試合設定</h2>
-                
+            <div x-show="activeTab === 'setup'" x-cloak>
+                <h2 class="text-2xl font-semibold mb-4">試合設定</h2>
+
                 <!-- 試合情報 -->
-                <div class="bg-gray-50 p-4 rounded-lg border mb-6">
-                    <h3 class="text-lg font-medium mb-3">試合情報</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
+                    <h3 class="text-xl font-medium mb-4">試合情報</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 対戦相手 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">対戦相手</label>
-                            <input type="text" x-model="game.opponent" placeholder="対戦相手チーム名" class="mt-1 w-full p-2 border rounded-md">
+                            <label for="opponentName" class="block text-sm font-medium text-gray-700 mb-1">対戦相手</label>
+                            <input type="text" id="opponentName" x-model="game.opponentName" placeholder="対戦相手チーム名" class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">先攻 / 後攻</label>
-                            <div class="mt-1 flex space-x-4">
+
+                        <!-- 先攻/後攻 -->
+                        <fieldset>
+                            <legend class="block text-sm font-medium text-gray-700 mb-1">先攻 / 後攻</legend>
+                            <div class="flex items-center space-x-4 mt-2">
                                 <label class="flex items-center">
-                                    <input type="radio" x-model="game.playFirst" value="first" class="form-radio h-4 w-4 text-blue-600">
-                                    <span class="ml-2">ありんこアントス (先攻)</span>
+                                    <input type="radio" x-model="game.myTeamAttack" value="first" class="form-radio text-blue-600 focus:ring-blue-500">
+                                    <span class="ml-2 text-gray-700">ありんこアントス (先攻)</span>
                                 </label>
                                 <label class="flex items-center">
-                                    <input type="radio" x-model="game.playFirst" value="second" class="form-radio h-4 w-4 text-blue-600">
-                                    <span class="ml-2">ありんこアントス (後攻)</span>
+                                    <input type="radio" x-model="game.myTeamAttack" value="second" class="form-radio text-blue-600 focus:ring-blue-500">
+                                    <span class="ml-2 text-gray-700">ありんこアントス (後攻)</span>
                                 </label>
                             </div>
+                        </fieldset>
+
+                        <!-- 一塁側/三塁側 -->
+                        <fieldset>
+                            <legend class="block text-sm font-medium text-gray-700 mb-1">一塁側 / 三塁側</legend>
+                            <div class="flex items-center space-x-4 mt-2">
+                                <label class="flex items-center">
+                                    <input type="radio" x-model="game.myTeamSide" value="firstBase" class="form-radio text-blue-600 focus:ring-blue-500">
+                                    <span class="ml-2 text-gray-700">ありんこアントス (一塁側)</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" x-model="game.myTeamSide" value="thirdBase" class="form-radio text-blue-600 focus:ring-blue-500">
+                                    <span class="ml-2 text-gray-700">ありんこアントス (三塁側)</span>
+                                </label>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <!-- 審判員 -->
+                    <div class="mt-6">
+                        <h4 class="text-lg font-medium text-gray-800 mb-3">審判員</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <input x-model="game.umpires.plate" type="text" placeholder="球審" class="p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <input x-model="game.umpires.first" type="text" placeholder="一塁" class="p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <input x-model="game.umpires.second" type="text" placeholder="二塁" class="p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <input x-model="game.umpires.third" type="text" placeholder="三塁" class="p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
                         </div>
                     </div>
                 </div>
 
                 <!-- メンバー設定 -->
-                <div class="bg-gray-50 p-4 rounded-lg border">
-                    <h3 class="text-lg font-medium mb-3">メンバー設定</h3>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <h3 class="text-xl font-medium mb-4">メンバー設定</h3>
                     
-                    <!-- スタメン -->
-                    <h4 class="text-md font-medium mb-2 text-gray-700">スターティングメンバー (1〜9番)</h4>
-                    <div class="space-y-2 mb-4">
-                        <template x-for="i in 9" :key="i">
+                    <!-- スターティングメンバー -->
+                    <h4 class="text-lg font-medium text-gray-800 mb-3">スターティングメンバー (1〜9番)</h4>
+                    <div class="space-y-3 mb-6">
+                        <template x-for="(starter, i) in game.starters" :key="i">
                             <div class="grid grid-cols-12 gap-2 items-center">
-                                <span class="col-span-1 font-medium text-right" x-text="i + '番'"></span>
-                                <select x-model="game.starters[i-1].playerId" class="col-span-6 md:col-span-7 p-2 border rounded-md">
-                                    <option value="">選手を選択</option>
-                                    <!-- 修正: key に i (行インデックス) を追加 -->
-                                    <template x-for="player in availablePlayers(i-1)" :key="i + '-' + player.id">
-                                        <option :value="player.id" x-text="(player.number || '?') + '.' + player.name"></option>
-                                    </template>
-                                </select>
-                                <select x-model="game.starters[i-1].position" class="col-span-5 md:col-span-4 p-2 border rounded-md">
-                                    <option value="">守備位置</option>
-                                    <!-- 修正: key に i (行インデックス) を追加 -->
-                                    <template x-for="pos in availablePositions(i-1)" :key="i + '-' + pos.id">
-                                        <option :value="pos.id" x-text="pos.id + '.' + pos.name"></option>
-                                    </template>
-                                </select>
+                                <span class="col-span-1 text-sm font-medium text-gray-700 text-right pr-2" x-text="`${i + 1}番`"></span>
+                                <!-- 選手選択 -->
+                                <div class="col-span-6 md:col-span-5">
+                                    <select x-model="starter.playerId" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">選手を選択</option>
+                                        <template x-for="player in availablePlayers(i)" :key="i + '-' + player.id">
+                                            <option :value="player.id" x-text="`${player.number || ' '}. ${player.name}`"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <!-- 守備位置選択 -->
+                                <div class="col-span-5 md:col-span-4">
+                                    <select x-model="starter.position" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">守備位置</option>
+                                        <template x-for="pos in availablePositions(i)" :key="i + '-' + pos.id">
+                                            <option :value="pos.id" x-text="`${pos.id}.${pos.name}`"></option>
+                                        </template>
+                                    </select>
+                                </div>
                             </div>
                         </template>
                     </div>
 
                     <!-- 控え選手 -->
-                    <h4 class="text-md font-medium mb-2 text-gray-700">控え選手</h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
-                        <template x-for="player in players" :key="player.id">
-                            <label class="flex items-center p-2 border rounded-md hover:bg-gray-100">
-                                <input type="checkbox" :value="player.id" x-model="game.bench" class="form-checkbox h-4 w-4 text-blue-600 rounded">
-                                <span class="ml-2 text-sm" x-text="player.name"></span>
+                    <h4 class="text-lg font-medium text-gray-800 mb-3">控え選手</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                        <template x-for="player in benchPlayers" :key="player.id">
+                            <label class="flex items-center p-3 border rounded-md bg-white shadow-sm hover:bg-gray-50 transition">
+                                <input type="checkbox" x-model="game.bench" :value="player.id" class="form-checkbox text-blue-600 h-5 w-5 rounded focus:ring-blue-500">
+                                <span class="ml-3 text-sm text-gray-700" x-text="`${player.number || ' '}. ${player.name}`"></span>
                             </label>
                         </template>
                     </div>
-                    <button @click="setRestToBench" class="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition text-sm">
-                        スタメン以外を控えに一括登録
+                </div>
+
+                <!-- 設定完了ボタン -->
+                <div class="mt-8 flex justify-end">
+                    <button @click="confirmLineup" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition duration-150 text-lg">
+                        試合開始 (アナウンスシートへ)
                     </button>
                 </div>
-                
-                <button @click="startGame" class="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold text-lg">
-                    試合開始 (アナウンスシート作成)
-                </button>
             </div>
 
             <!-- 3. アナウンスシートタブ -->
             <div x-show="activeTab === 'sheet'" x-cloak>
-                <h2 class="text-xl font-semibold mb-4">アナウンスシート</h2>
-                <div x-show="!game.started" class="text-center text-gray-500">
-                    <p>「試合設定」タブでメンバーを決定し、「試合開始」ボタンを押してください。</p>
+                
+                <!-- サブタブ -->
+                <div class="flex space-x-2 mb-6">
+                    <button @click="sheetSubTab = 'progress'" :class="{'active': sheetSubTab === 'progress'}" class="subtab-button">
+                        試合進行
+                    </button>
+                    <button @click="sheetSubTab = 'change'" :class="{'active': sheetSubTab === 'change'}" class="subtab-button">
+                        選手交代
+                    </button>
                 </div>
 
-                <div x-show="game.started" class="space-y-6">
-                    <!-- 試合概要 -->
-                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 text-blue-800">
-                        <p class="font-medium">
-                            <span x-text="game.playFirst === 'first' ? '先攻' : '後攻'"></span>: ありんこアントス
-                        </p>
-                        <p class="font-medium">
-                            <span x-text="game.playFirst === 'first' ? '後攻' : '先攻'"></span>: <span x-text="game.opponent"></span>
-                        </p>
-                    </div>
+                <!-- 3a. 試合進行 サブタブ -->
+                <div x-show="sheetSubTab === 'progress'">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        
+                        <!-- 試合状況カラム -->
+                        <div class="md:col-span-1 space-y-4">
+                            <h3 class="text-xl font-semibold mb-2">試合状況</h3>
+                            
+                            <!-- スコアボード -->
+                            <div class="bg-gray-800 text-white p-4 rounded-lg shadow-md">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-lg" x-text="game.myTeamAttack === 'first' ? 'ありんこアントス' : (game.opponentName || '対戦相手')"></span>
+                                    <span class="text-2xl font-bold" x-text="game.myTeamAttack === 'first' ? progress.myTeamScore : progress.opponentScore"></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-lg" x-text="game.myTeamAttack === 'second' ? 'ありんこアントス' : (game.opponentName || '対戦相手')"></span>
+                                    <span class="text-2xl font-bold" x-text="game.myTeamAttack === 'second' ? progress.myTeamScore : progress.opponentScore"></span>
+                                </div>
+                                <div class="text-center mt-3 pt-2 border-t border-gray-600">
+                                    <span class="text-xl" x-text="`${progress.inning}回 ${progress.topOrBottom === 'top' ? '表' : '裏'}`"></span>
+                                </div>
+                            </div>
+                            
+                            <!-- イニング操作 -->
+                            <div class="bg-white p-4 rounded-lg shadow border">
+                                <h4 class="font-medium mb-2">イニング操作</h4>
+                                <div class="flex items-center space-x-2">
+                                    <button @click="prevInningState" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md transition">-</button>
+                                    <span class="flex-grow text-center text-lg font-medium" x-text="`${progress.inning}回 ${progress.topOrBottom === 'top' ? '表' : '裏'}`"></span>
+                                    <button @click="nextInningState" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md transition">+</button>
+                                </div>
+                            </div>
 
-                    <!-- メンバー表 -->
+                            <!-- スコア操作 -->
+                            <div class="bg-white p-4 rounded-lg shadow border">
+                                <h4 class="font-medium mb-2">スコア操作</h4>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span>ありんこアントス:</span>
+                                    <div class="flex items-center space-x-2">
+                                        <button @click="progress.myTeamScore = Math.max(0, progress.myTeamScore - 1)" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-3 rounded-md transition">-</button>
+                                        <span class="text-lg w-8 text-center" x-text="progress.myTeamScore"></span>
+                                        <button @click="progress.myTeamScore++" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-3 rounded-md transition">+</button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span x-text="game.opponentName || '対戦相手'"></span>
+                                    <div class="flex items-center space-x-2">
+                                        <button @click="progress.opponentScore = Math.max(0, progress.opponentScore - 1)" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-3 rounded-md transition">-</button>
+                                        <span class="text-lg w-8 text-center" x-text="progress.opponentScore"></span>
+                                        <button @click="progress.opponentScore++" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-3 rounded-md transition">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- アナウンス生成カラム -->
+                        <div class="md:col-span-2 space-y-4">
+                            <h3 class="text-xl font-semibold mb-2">アナウンス生成</h3>
+                            
+                            <!-- 試合前 -->
+                            <div class="bg-white p-4 rounded-lg shadow border">
+                                <h4 class="text-lg font-medium mb-3">試合前</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    <button @click="generatePreGameLineupCall" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm py-2 px-3 rounded-md transition">先攻後攻決め</button>
+                                    <button @click="generateKnockCall('second')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm py-2 px-3 rounded-md transition">シートノック (後攻)</button>
+                                    <button @click="generateKnockCall('first')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm py-2 px-3 rounded-md transition">シートノック (先攻)</button>
+                                    <button @click="generateStartingMemberCall('ants')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm py-2 px-3 rounded-md transition">スタメン (アントス)</button>
+                                    <button @click="generateStartingMemberCall('opponent')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm py-2 px-3 rounded-md transition">スタメン (相手)</button>
+                                    <button @click="generateUmpireCall" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm py-2 px-3 rounded-md transition">審判紹介</button>
+                                </div>
+                            </div>
+                            
+                            <!-- イニング -->
+                            <div class="bg-white p-4 rounded-lg shadow border">
+                                <h4 class="text-lg font-medium mb-3">イニング</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    <button @click="generateFieldCall()" class="bg-green-100 hover:bg-green-200 text-green-800 text-sm py-2 px-3 rounded-md transition">守備紹介</button>
+                                    <button @click="generateInningAttackCall()" class="bg-green-100 hover:bg-green-200 text-green-800 text-sm py-2 px-3 rounded-md transition">打順アナウンス</button>
+                                    <button @click="generateInningScoreCall()" class="bg-green-100 hover:bg-green-200 text-green-800 text-sm py-2 px-3 rounded-md transition">得点アナウンス</button>
+                                </div>
+                            </div>
+
+                            <!-- 試合終了 -->
+                            <div class="bg-white p-4 rounded-lg shadow border">
+                                <h4 class="text-lg font-medium mb-3">試合終了</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    <button @click="generateGameEndCall()" class="bg-red-100 hover:bg-red-200 text-red-800 text-sm py-2 px-3 rounded-md transition">試合終了</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3b. 選手交代 サブタブ -->
+                <div x-show="sheetSubTab === 'change'">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- スタメン表 -->
+
+                        <!-- 左カラム: スタメン・控え -->
                         <div>
-                            <h3 class="text-lg font-medium mb-3">スターティングメンバー</h3>
-                            <div class="overflow-x-auto border rounded-lg">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">打順</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">守備</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">氏名</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">背番号</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        <template x-for="(starter, index) in lineup.starters" :key="index">
-                                            <tr>
-                                                <td class="px-3 py-2" x-text="index + 1"></td>
-                                                <td class="px-3 py-2" x-text="getPositionName(starter.position)"></td>
-                                                <td class="px-3 py-2 font-medium" x-text="getPlayerName(starter.playerId)"></td>
-                                                <td class="px-3 py-2" x-text="getPlayerNumber(starter.playerId)"></td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <!-- 控え選手 -->
-                        <div>
-                            <h3 class="text-lg font-medium mb-3">控え選手</h3>
-                            <div class="overflow-x-auto border rounded-lg">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">氏名</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">背番号</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        <template x-for="playerId in lineup.bench" :key="playerId">
-                                            <tr>
-                                                <td class="px-3 py-2 font-medium" x-text="getPlayerName(playerId)"></td>
-                                                <td class="px-3 py-2" x-text="getPlayerNumber(playerId)"></td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 交代アナウンス生成 -->
-                    <div class="space-y-6">
-                        <!-- 守備位置の交代 -->
-                        <div class="bg-gray-50 p-4 rounded-lg border">
-                            <h3 class="text-lg font-medium mb-3">守備位置の交代</h3>
-                            <div class="flex items-center space-x-2">
-                                <input type="text" x-model="changeForm.positionInput" placeholder="例: 4-1-5-2 (セカンドがピッチャー、ピッチャーがサード...)" class="w-full p-2 border rounded-md">
-                                <button @click="generatePositionChange" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition whitespace-nowrap">
-                                    生成
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- 選手の交代 (守備) -->
-                        <div class="bg-gray-50 p-4 rounded-lg border">
-                            <h3 class="text-lg font-medium mb-3">選手の交代 (守備交代)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <select x-model="changeForm.subOutPlayer" class="p-2 border rounded-md">
-                                    <option value="">交代する選手 (スタメン)</option>
-                                    <template x-for="(starter, index) in lineup.starters" :key="starter.playerId">
-                                        <option :value="starter.playerId" x-text="(index+1) + '番 ' + getPositionName(starter.position) + ' ' + getPlayerName(starter.playerId)"></option>
-                                    </template>
-                                </select>
-                                <select x-model="changeForm.subInPlayer" class="p-2 border rounded-md">
-                                    <option value="">出場する選手 (控え)</option>
-                                    <template x-for="playerId in lineup.bench" :key="playerId">
-                                        <option :value="playerId" x-text="getPlayerName(playerId) + ' (' + getPlayerNumber(playerId) + ')'"></option>
-                                    </template>
-                                </select>
-                                <select x-model="changeForm.subInPosition" class="p-2 border rounded-md">
-                                    <option value="">新しい守備位置</option>
-                                    <template x-for="pos in positions" :key="pos.id">
-                                        <option :value="pos.id" x-text="pos.name + ' (' + pos.id + ')'"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <button @click="generateSubstitution" class="mt-3 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition">
-                                生成
-                            </button>
-                        </div>
-
-                        <!-- 代打・代走 -->
-                        <div class="bg-gray-50 p-4 rounded-lg border">
-                            <h3 class="text-lg font-medium mb-3">代打・代走</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                                <select x-model="changeForm.pinchType" class="p-2 border rounded-md">
-                                    <option value="hitter">代打</option>
-                                    <option value="runner">代走</option>
-                                </select>
-                                <select x-model="changeForm.pinchOutPlayer" class="p-2 border rounded-md">
-                                    <option value="">交代する選手 (スタメン)</option>
-                                    <template x-for="(starter, index) in lineup.starters" :key="starter.playerId">
-                                        <option :value="starter.playerId" x-text="(index+1) + '番 ' + getPlayerName(starter.playerId)"></option>
-                                    </template>
-                                </select>
-                                <select x-model="changeForm.pinchInPlayer" class="p-2 border rounded-md">
-                                    <option value="">出場する選手 (控え)</option>
-                                    <template x-for="playerId in lineup.bench" :key="playerId">
-                                        <option :value="playerId" x-text="getPlayerName(playerId) + ' (' + getPlayerNumber(playerId) + ')'"></option>
-                                    </template>
-                                </select>
-                                <input x-model="changeForm.pinchRunnerBase" type="text" placeholder="塁 (代走の場合 例: 1塁)" class="p-2 border rounded-md" x-show="changeForm.pinchType === 'runner'">
-                            </div>
+                            <h3 class="text-xl font-semibold mb-4">現在のラインナップ</h3>
                             
-                            <!-- 代打・代走後の守備 -->
-                            <div class="mt-4 pt-4 border-t">
-                                <h4 class="text-md font-medium mb-2 text-gray-700">攻撃終了後...</h4>
-                                <div class="flex items-center space-x-4">
-                                    <label class="flex items-center">
-                                        <input type="radio" x-model="changeForm.pinchAfter" value="stay" class="form-radio">
-                                        <span class="ml-2">そのまま守備につく</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="radio" x-model="changeForm.pinchAfter" value="change" class="form-radio">
-                                        <span class="ml-2">さらに交代する</span>
-                                    </label>
+                            <!-- スタメン -->
+                            <div class="bg-white p-4 rounded-lg shadow border mb-6">
+                                <h4 class="text-lg font-medium mb-3">スターティングメンバー</h4>
+                                <ul class="divide-y divide-gray-200">
+                                    <template x-for="(starter, i) in lineup.starters" :key="i">
+                                        <li class="py-2 flex justify-between items-center">
+                                            <span class="font-medium" x-text="`${i + 1}番`"></span>
+                                            <span class="text-gray-800" x-text="getPlayerName(starter.playerId) || '未設定'"></span>
+                                            <span class="text-gray-600 text-sm" x-text="getPositionName(starter.position) || (starter.position === 'PH' ? '代打' : (starter.position === 'PR' ? '代走' : '未設定'))"></span>
+                                            <span class="text-gray-500 text-sm w-12 text-right" x-text="`背番号 ${getPlayerNumber(starter.playerId) || '-'}`"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+
+                            <!-- 控え -->
+                            <div class="bg-white p-4 rounded-lg shadow border">
+                                <h4 class="text-lg font-medium mb-3">控え選手</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="playerId in lineup.bench" :key="playerId">
+                                        <span class="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full" x-text="`${getPlayerNumber(playerId) || '-'} ${getPlayerName(playerId)}`"></span>
+                                    </template>
+                                    <template x-if="lineup.bench.length === 0">
+                                        <span class="text-gray-500 text-sm">控え選手はいません。</span>
+                                    </template>
                                 </div>
-                                <div x-show="changeForm.pinchAfter === 'stay'" class="mt-2">
-                                    <select x-model="changeForm.pinchStayPosition" class="p-2 border rounded-md">
-                                        <option value="">守備位置</option>
-                                        <template x-for="pos in positions" :key="pos.id">
-                                            <option :value="pos.id" x-text="pos.name + ' (' + pos.id + ')'"></option>
-                                        </template>
-                                    </select>
+                            </div>
+                        </div>
+
+                        <!-- 右カラム: 交代フォーム -->
+                        <div class="space-y-6">
+                            <h3 class="text-xl font-semibold mb-4">交代アナウンス</h3>
+
+                            <!-- 守備位置の交代 -->
+                            <div class="change-section">
+                                <h4 class="text-lg font-medium mb-3">守備位置の交代</h4>
+                                <p class="text-sm text-gray-600 mb-2">例: 4-1-5-2 (セカンド→ピッチャー→サード→キャッチャー→セカンド)</p>
+                                <div class="flex space-x-2">
+                                    <input type="text" x-model="changeForms.positionChange" placeholder="例: 4-1-5-2" class="flex-grow p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <button @click="generatePositionChange" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition">生成</button>
                                 </div>
-                                <div x-show="changeForm.pinchAfter === 'change'" class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <select x-model="changeForm.pinchChangeInPlayer" class="p-2 border rounded-md">
-                                        <option value="">出場する選手 (控え)</option>
-                                        <template x-for="playerId in lineup.bench.filter(id => id !== changeForm.pinchInPlayer)" :key="playerId">
-                                            <option :value="playerId" x-text="getPlayerName(playerId) + ' (' + getPlayerNumber(playerId) + ')'"></option>
-                                        </template>
-                                    </select>
-                                    <select x-model="changeForm.pinchChangeInPosition" class="p-2 border rounded-md">
-                                        <option value="">守備位置</option>
+                            </div>
+
+                            <!-- 選手の交代 (守備) -->
+                            <div class="change-section">
+                                <h4 class="text-lg font-medium mb-3">選手の交代 (守備から)</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">交代する選手 (OUT)</label>
+                                        <select x-model="changeForms.playerChange.outPlayerId" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="">(スタメンから選択)</option>
+                                            <template x-for="starter in lineup.starters" :key="starter.playerId">
+                                                <option :value="starter.playerId" x-text="`${getPositionName(starter.position) || (starter.position === 'PH' ? '代打' : (starter.position === 'PR' ? '代走' : '不明'))}: ${getPlayerName(starter.playerId)}`"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">入る選手 (IN)</label>
+                                        <select x-model="changeForms.playerChange.inPlayerId" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="">(控えから選択)</option>
+                                            <template x-for="playerId in lineup.bench" :key="playerId">
+                                                <option :value="playerId" x-text="getPlayerName(playerId)"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <select x-model="changeForms.playerChange.newPosition" class="flex-grow p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">(入るポジション)</option>
                                         <template x-for="pos in positions" :key="pos.id">
-                                            <option :value="pos.id" x-text="pos.name + ' (' + pos.id + ')'"></option>
+                                            <option :value="pos.id" x-text="pos.name"></option>
                                         </template>
                                     </select>
+                                    <button @click="generatePlayerChange" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition">生成</button>
                                 </div>
                             </div>
                             
-                            <button @click="generatePinch" class="mt-3 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition">
-                                生成
-                            </button>
-                        </div>
-
-                        <!-- アナウンス表示エリア -->
-                        <div x-show="announcement" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-md" x-transition>
-                            <h3 class="text-lg font-medium text-yellow-800 mb-2">アナウンス文</h3>
-                            <div class="relative">
-                                <button @click="copyToClipboard(announcement)" class="absolute top-0 right-0 bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-300">
-                                    コピー
-                                </button>
-                                <pre class="whitespace-pre-wrap text-gray-900 font-sans text-base leading-relaxed" x-text="announcement"></pre>
+                            <!-- 代打 -->
+                            <div class="change-section">
+                                <h4 class="text-lg font-medium mb-3">代打</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">交代する選手 (OUT)</label>
+                                        <select x-model="changeForms.pinchHitter.outPlayerId" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="">(スタメンから選択)</option>
+                                            <template x-for="starter in lineup.starters" :key="starter.playerId">
+                                                <option :value="starter.playerId" x-text="`${getBattingOrder(starter.playerId)}番: ${getPlayerName(starter.playerId)}`"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">代打の選手 (IN)</label>
+                                        <select x-model="changeForms.pinchHitter.inPlayerId" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="">(控えから選択)</option>
+                                            <template x-for="playerId in lineup.bench" :key="playerId">
+                                                <option :value="playerId" x-text="getPlayerName(playerId)"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button @click="generatePinchHitter" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition">代打アナウンス生成</button>
                             </div>
-                        </div>
 
+                            <!-- 代走 -->
+                            <div class="change-section">
+                                <h4 class="text-lg font-medium mb-3">代走</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">交代する走者 (OUT)</label>
+                                        <select x-model="changeForms.pinchRunner.outPlayerId" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="">(選手を選択)</option>
+                                            <!-- 代走はスタメン/控え関係なく交代可能性があるため全員から選ぶ -->
+                                            <template x-for="player in players" :key="player.id">
+                                                <option :value="player.id" x-text="player.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">代走の選手 (IN)</label>
+                                        <select x-model="changeForms.pinchRunner.inPlayerId" class="w-full p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="">(控えから選択)</option>
+                                            <template x-for="playerId in lineup.bench" :key="playerId">
+                                                <option :value="playerId" x-text="getPlayerName(playerId)"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <select x-model="changeForms.pinchRunner.base" class="flex-grow p-2 border rounded-md bg-white focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="一">一塁走者</option>
+                                        <option value="二">二塁走者</option>
+                                        <option value="三">三塁走者</option>
+                                    </select>
+                                    <button @click="generatePinchRunner" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition">代走アナウンス生成</button>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
-            </div>
+
+                <!-- 共通: アナウンス結果表示 -->
+                <div x-show="announcement" x-cloak class="mt-8">
+                    <h3 class="text-xl font-semibold mb-3">アナウンス原稿</h3>
+                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-6 rounded-lg shadow-md">
+                        <textarea x-model="announcement" rows="10" class="w-full p-3 border border-yellow-300 rounded-md bg-white focus:ring-yellow-500 focus:border-yellow-500 text-lg font-mono leading-relaxed"></textarea>
+                        <button @click="copyToClipboard(announcement)" class="mt-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition text-sm">
+                            クリップボードにコピー
+                        </button>
+                    </div>
+                </div>
+
+            </div> <!-- End of 'sheet' tab -->
+
         </main>
     </div>
 
-    <!-- メッセージ表示 -->
-    <div x-show="message.text" x-transition
-         :class="{ 'bg-green-500': message.type === 'success', 'bg-red-500': message.type === 'error' }"
-         class="fixed bottom-4 right-4 text-white p-3 rounded-lg shadow-lg"
-         x-text="message.text">
-    </div>
-
+    <!-- Alpine.jsデータとロジック -->
     <script>
-        // Alpine.jsがロードされるのを待つ
         document.addEventListener('alpine:init', () => {
-            Alpine.data('announcementApp', () => ({
-                activeTab: 'master',
-                players: [],
+            Alpine.data('appData', () => ({
+                // --- 状態管理 ---
+                activeTab: 'master', // 'master', 'setup', 'sheet'
+                sheetSubTab: 'progress', // 'progress', 'change'
+                message: { text: '', type: 'success' }, // { text, type }
+                
+                // --- データ ---
+                players: [], // 選手マスタ
                 newPlayer: { name: '', furigana: '', number: null, grade: '' },
+                positions: [
+                    { id: '1', name: 'ピッチャー' }, { id: '2', name: 'キャッチャー' }, { id: '3', name: 'ファースト' },
+                    { id: '4', name: 'セカンド' }, { id: '5', name: 'サード' }, { id: '6', name: 'ショート' },
+                    { id: '7', name: 'レフト' }, { id: '8', name: 'センター' }, { id: '9', name: 'ライト' }
+                ],
+                
+                // --- 試合設定データ ---
                 game: {
-                    opponent: '',
-                    playFirst: 'first',
+                    opponentName: '',
+                    myTeamAttack: 'first', // 'first', 'second'
+                    myTeamSide: 'firstBase', // 'firstBase', 'thirdBase'
+                    umpires: { plate: '', first: '', second: '', third: '' },
                     starters: Array(9).fill().map(() => ({ playerId: '', position: '' })),
-                    bench: [],
-                    started: false,
+                    bench: [], // 控え選手のIDリスト
+                    started: false
                 },
-                lineup: {
+                
+                // --- アナウンスシート用データ ---
+                lineup: { // 試合開始時に game からコピー
                     starters: [],
                     bench: []
                 },
-                positions: [
-                    { id: '1', name: 'ピッチャー' },
-                    { id: '2', name: 'キャッチャー' },
-                    { id: '3', name: 'ファースト' },
-                    { id: '4', name: 'セカンド' },
-                    { id: '5', name: 'サード' },
-                    { id: '6', name: 'ショート' },
-                    { id: '7', name: 'レフト' },
-                    { id: '8', name: 'センター' },
-                    { id: '9', name: 'ライト' }
-                ],
-                changeForm: {
-                    positionInput: '',
-                    subOutPlayer: '',
-                    subInPlayer: '',
-                    subInPosition: '',
-                    pinchType: 'hitter',
-                    pinchOutPlayer: '',
-                    pinchInPlayer: '',
-                    pinchRunnerBase: '',
-                    pinchAfter: '',
-                    pinchStayPosition: '',
-                    pinchChangeInPlayer: '',
-                    pinchChangeInPosition: '',
+                progress: { // 試合進行
+                    inning: 1,
+                    topOrBottom: 'top', // 'top' (表), 'bottom' (裏)
+                    myTeamScore: 0,
+                    opponentScore: 0,
+                    battingOrderIndex: { // 0-8
+                        first: 0, // 先攻チームの打順
+                        second: 0 // 後攻チームの打順
+                    }
                 },
-                announcement: '',
-                message: { text: '', type: 'success' },
+                changeForms: { // 交代用フォーム
+                    positionChange: '',
+                    playerChange: { outPlayerId: '', inPlayerId: '', newPosition: '' },
+                    pinchHitter: { outPlayerId: '', inPlayerId: '' },
+                    pinchRunner: { outPlayerId: '', inPlayerId: '', base: '一' }
+                },
+                announcement: '', // 生成されたアナウンス文
 
+                // --- 初期化 ---
                 init() {
                     this.loadPlayers();
-                    // ページリロード時に状態を復元（簡易的）
-                    // ★ 選手マスタのみを永続化し、試合設定はリロード時にリセットするため、
-                    // ★ 以下の game オブジェクトの復元処理をコメントアウト（削除）します。
-                    /*
-                    const savedGame = localStorage.getItem('baseballApp_game');
-                    if (savedGame) {
-                        const parsedGame = JSON.parse(savedGame);
-                        // game オブジェクトのキーを安全にマージ
-                        Object.keys(this.game).forEach(key => {
-                            if (parsedGame.hasOwnProperty(key)) {
-                                this.game[key] = parsedGame[key];
-                            }
-                        });
-                        // lineup も復元
-                        if (parsedGame.started) {
-                            this.lineup.starters = [...this.game.starters];
-                            this.lineup.bench = [...this.game.bench];
+                    // 試合設定はリロード時にリセット
+                },
+
+                // --- ユーティリティ ---
+                showMessage(text, type = 'success', duration = 3000) {
+                    this.message = { text, type };
+                    setTimeout(() => { this.message.text = ''; }, duration);
+                },
+                // IDから選手情報を取得
+                getPlayer(id) {
+                    return this.players.find(p => p.id === id);
+                },
+                getPlayerName(id) {
+                    return this.getPlayer(id)?.name || null;
+                },
+                getPlayerNumber(id) {
+                    return this.getPlayer(id)?.number || null;
+                },
+                // IDから守備位置名を取得
+                getPositionName(id) {
+                    if (!id) return null;
+                    // 'PH' や 'PR' などの特殊な値を考慮
+                    if (id === 'PH') return '代打';
+                    if (id === 'PR') return '代走';
+                    return this.positions.find(p => p.id === id)?.name || null;
+                },
+                // 選手IDから現在の打順を取得
+                getBattingOrder(playerId) {
+                    const index = this.lineup.starters.findIndex(s => s.playerId === playerId);
+                    return index !== -1 ? index + 1 : null;
+                },
+                // クリップボードにコピー (execCommand バージョン)
+                copyToClipboard(text) {
+                    if (!text) return;
+                    try {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = text;
+                        textarea.style.position = 'fixed'; // 画面外に
+                        textarea.style.left = '-9999px';
+                        textarea.style.opacity = 0;
+                        document.body.appendChild(textarea);
+                        
+                        textarea.select();
+                        textarea.setSelectionRange(0, textarea.value.length); // iOS Safari向け
+                        
+                        let successful = false;
+                        try {
+                            successful = document.execCommand('copy');
+                        } catch (err) {
+                            console.error('execCommand copy failed', err);
+                            successful = false;
                         }
-                    }
-                    */
-                },
 
-                // --- 2つの関数をロジック変更 ---
-                availablePlayers(currentIndex) {
-                    // 「currentIndex」以外の行で選択済みのIDセット
-                    const otherSelectedIds = new Set(
-                        this.game.starters
-                            .filter((_, index) => index !== currentIndex) // 自分以外の行
-                            .map(s => s.playerId)
-                            .filter(id => id !== '')
-                    );
-                    
-                    // 他の行で選択されて *いない* 選手のみを返す
-                    return this.players.filter(p => !otherSelectedIds.has(p.id));
-                },
-                availablePositions(currentIndex) {
-                    // 「currentIndex」以外の行で選択済みのIDセット
-                    const otherSelectedIds = new Set(
-                        this.game.starters
-                            .filter((_, index) => index !== currentIndex) // 自分以外の行
-                            .map(s => s.position)
-                            .filter(id => id !== '')
-                    );
-                    
-                    // 他の行で選択されて *いない* ポジションのみを返す
-                    return this.positions.filter(p => !otherSelectedIds.has(p.id));
-                },
-                // --- 関数変更ここまで ---
+                        document.body.removeChild(textarea);
 
-                // 選手マスタ関連
-                loadPlayers() {
-                    const data = localStorage.getItem('baseballApp_players');
-                    if (data && data !== '[]') { // データがあり、空配列でない場合
-                        this.players = JSON.parse(data);
-                    } else {
-                        // LocalStorageにデータがない場合、デフォルトデータを設定
-                        this.players = this.getDefaultPlayers();
-                        this.savePlayers(false); // メッセージなしで初回保存
+                        if (successful) {
+                            this.showMessage('クリップボードにコピーしました。');
+                        } else {
+                            this.showMessage('コピーに失敗しました。', 'error');
+                        }
+                    } catch (e) {
+                        console.error('Copy to clipboard failed:', e);
+                        this.showMessage('コピーに失敗しました。', 'error');
                     }
-                    // ★ 修正: ソート順を 背番号 -> ふりがな -> 名前 -> ID に変更
-                    this.players.sort((a, b) => {
+                },
+                // ソート関数 (背番号 -> ふりがな -> 名前 -> ID)
+                sortPlayers(players) {
+                    return players.sort((a, b) => {
                         const numA = (a.number === null || a.number === undefined || a.number === '') ? Infinity : Number(a.number);
                         const numB = (b.number === null || b.number === undefined || b.number === '') ? Infinity : Number(b.number);
                         
@@ -523,471 +653,550 @@
                             return numA - numB; // 背番号で昇順ソート
                         }
                         
-                        const furiganaA = a.furigana || a.name;
-                        const furiganaB = b.furigana || b.name;
-                        if (furiganaA < furiganaB) return -1;
-                        if (furiganaA > furiganaB) return 1;
+                        const furiganaA = a.furigana || a.name || '';
+                        const furiganaB = b.furigana || b.name || '';
+                        const furiganaCompare = furiganaA.localeCompare(furiganaB, 'ja');
+                        if (furiganaCompare !== 0) {
+                            return furiganaCompare;
+                        }
 
-                        if (a.name < b.name) return -1;
-                        if (a.name > b.name) return 1;
+                        const nameA = a.name || '';
+                        const nameB = b.name || '';
+                        const nameCompare = nameA.localeCompare(nameB, 'ja');
+                        if (nameCompare !== 0) {
+                            return nameCompare;
+                        }
                         
-                        return a.id.localeCompare(b.id);
+                        return (a.id || '').localeCompare(b.id || '');
                     });
                 },
-                getDefaultPlayers() { // 新しく追加
-                    // PDF (令和7年新人戦大会登録書) のデータ
-                    // No.8 小野 暁人 に修正済み
-                    return [
-                        { id: '1', name: '小高 斗愛', furigana: 'オダカ トア', number: 10, grade: '5年' },
-                        { id: '2', name: '難波 諒成', furigana: 'ナンバ リョウセイ', number: 1, grade: '5年' },
-                        { id: '3', name: '高橋 奏多', furigana: 'タカハシ カナタ', number: 2, grade: '5年' },
-                        { id: '4', name: '浪川 長政', furigana: 'ナミカワ ナガマサ', number: 3, grade: '5年' },
-                        { id: '5', name: '山田 颯真', furigana: 'ヤマダ ソウマ', number: 4, grade: '4年' },
-                        { id: '6', name: '津村 一輝', furigana: 'ツムラ カヅキ', number: 5, grade: '4年' },
-                        { id: '7', name: '菱沼 颯介', furigana: 'ヒシヌマ ソウスケ', number: 6, grade: '4年' },
-                        { id: '8', name: '小野 暁人', furigana: 'オノ アキト', number: 7, grade: '4年' },
-                        { id: '9', name: '小高 愛之佑', furigana: 'オダカ アイノスケ', number: 8, grade: '3年' },
-                        { id: '10', name: '浅野 泰地', furigana: 'アサノ タイチ', number: 9, grade: '3年' },
-                        { id: '11', name: '近藤 謙成', furigana: 'コンドウ ケンセイ', number: 11, grade: '3年' },
-                        { id: '12', name: '知野見 怜央', furigana: 'チノミ レオ', number: 12, grade: '3年' },
-                        { id: '13', name: '藤山 琉杜', furigana: 'トウヤマ リュウト', number: 13, grade: '3年' },
-                        { id: '14', name: '小河原 維', furigana: 'オガワラ タモツ', number: 14, grade: '3年' },
-                        { id: '15', name: '古川 峻丞', furigana: 'フルカワ シュンスケ', number: 15, grade: '2年' },
-                        { id: '16', name: '坪井 雄也', furigana: 'ツボイ ユウヤ', number: 16, grade: '1年' },
-                        { id: '17', name: '近藤 茉莉', furigana: 'コンドウ マツリ', number: 17, grade: '1年' }
-                    ];
-                },
-                savePlayers(showMessage = true) { // 引数を追加
-                    localStorage.setItem('baseballApp_players', JSON.stringify(this.players));
-                    if (showMessage) { // 条件分岐を追加
-                        this.showMessage('選手マスタを保存しました', 'success');
+
+                // --- 選手マスタ (1. Master) ---
+                loadPlayers() {
+                    const savedPlayers = localStorage.getItem('baseballApp_players');
+                    if (savedPlayers) {
+                        this.players = this.sortPlayers(JSON.parse(savedPlayers));
+                    } else {
+                        // デフォルトデータ
+                        this.players = this.sortPlayers(this.getDefaultPlayers());
+                        this.savePlayers(false); // メッセージなしで初回保存
                     }
+                },
+                savePlayers(showMessage = true) {
+                    localStorage.setItem('baseballApp_players', JSON.stringify(this.players));
+                    if (showMessage) {
+                        this.showMessage('選手マスタを保存しました。');
+                    }
+                    // 保存後にソートを再実行して表示を統一
+                    this.players = this.sortPlayers(this.players);
                 },
                 addPlayer() {
                     if (!this.newPlayer.name) {
-                        this.showMessage('選手名を入力してください', 'error');
+                        this.showMessage('氏名は必須です。', 'error');
                         return;
                     }
                     this.players.push({
-                        id: crypto.randomUUID(), // ID採番をより堅牢な方式に変更
-                        ...this.newPlayer
+                        id: crypto.randomUUID(),
+                        name: this.newPlayer.name,
+                        furigana: this.newPlayer.furigana,
+                        number: this.newPlayer.number,
+                        grade: this.newPlayer.grade
                     });
                     this.newPlayer = { name: '', furigana: '', number: null, grade: '' };
-                    this.savePlayers(); // メッセージありで保存 (デフォルト)
-                    // ★ 修正: ソート順を 背番号 -> ふりがな -> 名前 -> ID に変更
-                    this.players.sort((a, b) => {
-                        const numA = (a.number === null || a.number === undefined || a.number === '') ? Infinity : Number(a.number);
-                        const numB = (b.number === null || b.number === undefined || b.number === '') ? Infinity : Number(b.number);
-                        
-                        if (numA !== numB) {
-                            return numA - numB; // 背番号で昇順ソート
-                        }
-
-                        const furiganaA = a.furigana || a.name;
-                        const furiganaB = b.furigana || b.name;
-                        if (furiganaA < furiganaB) return -1;
-                        if (furiganaA > furiganaB) return 1;
-
-                        if (a.name < b.name) return -1;
-                        if (a.name > b.name) return 1;
-                        
-                        return a.id.localeCompare(b.id);
-                    });
+                    this.savePlayers();
                 },
                 deletePlayer(id) {
                     this.players = this.players.filter(p => p.id !== id);
                     this.savePlayers();
                 },
                 exportPlayers() {
-                    const dataStr = JSON.stringify(this.players, null, 2);
-                    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                    const exportFileDefaultName = 'arinko_antos_players.json';
-                    
+                    if (this.players.length === 0) {
+                        this.showMessage('エクスポートする選手がいません。', 'error');
+                        return;
+                    }
+                    const dataStr = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.players, null, 2));
                     const linkElement = document.createElement('a');
-                    linkElement.setAttribute('href', dataUri);
-                    linkElement.setAttribute('download', exportFileDefaultName);
+                    linkElement.setAttribute('href', dataStr);
+                    linkElement.setAttribute('download', 'antos_players.json');
                     
-                    // --- 修正: リンクをDOMに一時的に追加・削除 ---
-                    linkElement.style.display = 'none'; // 画面に表示しない
-                    document.body.appendChild(linkElement);
+                    // より確実なダウンロード実行
+                    document.body.appendChild(linkElement); // DOMに追加
                     linkElement.click();
-                    document.body.removeChild(linkElement);
-                    // --- 修正ここまで ---
+                    document.body.removeChild(linkElement); // すぐに削除
                     
-                    this.showMessage('選手マスタをエクスポートしました', 'success');
+                    this.showMessage('選手データをエクスポートしました。');
                 },
-                importPlayers(e) {
-                    const file = e.target.files[0];
+                importPlayers(event) {
+                    const file = event.target.files[0];
                     if (!file) return;
 
                     const reader = new FileReader();
-                    reader.onload = (event) => {
+                    reader.onload = (e) => {
                         try {
-                            const importedPlayers = JSON.parse(event.target.result);
-                            // TODO: バリデーションチェック
+                            const importedPlayers = JSON.parse(e.target.result);
                             if (Array.isArray(importedPlayers)) {
-                                // 既存のIDと重複しないようにマージするか、置き換えるかを選択
-                                // ここでは単純に置き換え
-                                this.players = importedPlayers;
+                                // バリデーション (簡易)
+                                const validPlayers = importedPlayers.filter(p => p.id && p.name).map(p => ({
+                                    id: p.id,
+                                    name: p.name,
+                                    furigana: p.furigana || '',
+                                    number: p.number || null,
+                                    grade: p.grade || ''
+                                }));
+                                
+                                // 既存のIDと重複する場合は上書き、それ以外は追加
+                                const playerMap = new Map(this.players.map(p => [p.id, p]));
+                                validPlayers.forEach(p => playerMap.set(p.id, p));
+                                
+                                this.players = Array.from(playerMap.values());
                                 this.savePlayers();
-                                this.showMessage('選手マスタをインポートしました', 'success');
+                                this.showMessage(`${validPlayers.length}件の選手データをインポートしました。`);
                             } else {
-                                throw new Error('無効なファイル形式です');
+                                throw new Error('無効なファイル形式です。');
                             }
                         } catch (err) {
-                            this.showMessage(`インポートに失敗しました: ${err.message}`, 'error');
+                            console.error('Import failed:', err);
+                            this.showMessage('JSONの読み込みに失敗しました。', 'error');
                         }
-                        // 同じファイルを選択できるようにinputの値をリセット
-                        e.target.value = null;
                     };
                     reader.readAsText(file);
+                    event.target.value = null; // 同じファイルを再選択できるように
+                },
+                getDefaultPlayers() {
+                    return [
+                        {id: "1", name: "小高 斗愛", furigana: "オダカ トア", number: 10, grade: "5年"},
+                        {id: "2", name: "難波 諒成", furigana: "ナンバ リョウセイ", number: 1, grade: "5年"},
+                        {id: "3", name: "高橋 奏多", furigana: "タカハシ カナタ", number: 2, grade: "5年"},
+                        {id: "4", name: "浪川 長政", furigana: "ナミカワ ナガマサ", number: 3, grade: "5年"},
+                        {id: "5", name: "山田 颯真", furigana: "ヤマダ ソウマ", number: 4, grade: "4年"},
+                        {id: "6", name: "津村 一輝", furigana: "ツムラ カヅキ", number: 5, grade: "4年"},
+                        {id: "7", name: "菱沼 颯介", furigana: "ヒシヌマ ソウスケ", number: 6, grade: "4年"},
+                        {id: "8", name: "小野 暁人", furigana: "オノ アキト", number: 7, grade: "4年"}, // 修正済み
+                        {id: "9", name: "小高 愛之佑", furigana: "オダカ アイノスケ", number: 8, grade: "3年"},
+                        {id: "10", name: "浅野 泰地", furigana: "アサノ タイチ", number: 9, grade: "3年"},
+                        {id: "11", name: "近藤 謙成", furigana: "コンドウ ケンセイ", number: 11, grade: "3年"},
+                        {id: "12", name: "知野見 怜央", furigana: "チノミ レオ", number: 12, grade: "3年"},
+                        {id: "13", name: "藤山 琉杜", furigana: "トウヤマ リュウト", number: 13, grade: "3年"},
+                        {id: "14", name: "小河原  維", furigana: "オガワラ タモツ", number: 14, grade: "3年"},
+                        {id: "15", name: "古川 峻丞", furigana: "フルカワ シュンスケ", number: 15, grade: "2年"},
+                        {id: "16", name: "坪井 雄也", furigana: "ツボイ ユウヤ", number: 16, grade: "1年"},
+                        {id: "17", name: "近藤 茉莉", furigana: "コンドウ マツリ", number: 17, grade: "1年"}
+                    ];
                 },
 
-                // 試合設定関連
-                setRestToBench() {
+                // --- 試合設定 (2. Setup) ---
+                // スタメン選択肢: 自分以外の行で選択されていない選手
+                availablePlayers(currentIndex) {
+                    const otherSelectedIds = new Set(
+                        this.game.starters
+                            .filter((_, index) => index !== currentIndex)
+                            .map(s => s.playerId)
+                            .filter(id => id !== '')
+                    );
+                    return this.players.filter(p => !otherSelectedIds.has(p.id));
+                },
+                // 守備位置選択肢: 自分以外の行で選択されていない守備位置
+                availablePositions(currentIndex) {
+                    const otherSelectedIds = new Set(
+                        this.game.starters
+                            .filter((_, index) => index !== currentIndex)
+                            .map(s => s.position)
+                            .filter(id => id !== '')
+                    );
+                    return this.positions.filter(p => !otherSelectedIds.has(p.id));
+                },
+                // 控え選手選択肢: スタメンで選択されていない選手
+                get benchPlayers() {
                     const starterIds = new Set(this.game.starters.map(s => s.playerId));
-                    this.game.bench = this.players
-                        .filter(p => !starterIds.has(p.id))
-                        .map(p => p.id);
-                    this.showMessage('スタメン以外を控えに登録しました', 'success');
+                    return this.players.filter(p => !starterIds.has(p.id));
                 },
-                startGame() {
+                // 試合開始 -> アナウンスシートへ
+                confirmLineup() {
                     // バリデーション
-                    if (!this.game.opponent) {
-                        this.showMessage('対戦相手を入力してください', 'error');
+                    if (!this.game.opponentName) {
+                        this.showMessage('対戦相手を入力してください。', 'error');
+                        this.activeTab = 'setup'; // 強制的に設定タブに戻す
                         return;
                     }
-                    if (!this.game.playFirst) {
-                        this.showMessage('先攻/後攻を選択してください', 'error');
+                    const startersComplete = this.game.starters.every(s => s.playerId && s.position);
+                    if (this.game.starters.length !== 9 || !startersComplete) {
+                        this.showMessage('スターティングメンバー9人全員の選手と守備位置を設定してください。', 'error');
+                        this.activeTab = 'setup';
                         return;
                     }
-                    const startersValid = this.game.starters.every(s => s.playerId && s.position);
-                    if (!startersValid) {
-                        this.showMessage('スタメン9人全員の選手と守備位置を設定してください', 'error');
-                        return;
-                    }
-                    // 重複チェック
-                    const starterIds = this.game.starters.map(s => s.playerId);
-                    if (new Set(starterIds).size !== 9) {
-                        this.showMessage('スタメンに同じ選手が重複しています', 'error');
-                        return;
-                    }
-                    const starterPos = this.game.starters.map(s => s.position);
-                     if (new Set(starterPos).size !== 9) {
-                        this.showMessage('スタメンの守備位置が重複しています', 'error');
-                        return;
-                    }
-
-                    this.game.started = true;
-                    // 現在のラインナップを確定
+                    
+                    // ラインナップを確定
                     this.lineup.starters = JSON.parse(JSON.stringify(this.game.starters));
                     this.lineup.bench = JSON.parse(JSON.stringify(this.game.bench));
                     
-                    // ゲーム状態を保存
-                    // ★ 選手マスタのみを永続化し、試合設定はリロード時にリセットするため、
-                    // ★ 以下の game オブジェクトの保存処理をコメントアウト（削除）します。
-                    // localStorage.setItem('baseballApp_game', JSON.stringify(this.game));
-                    
+                    this.game.started = true;
                     this.activeTab = 'sheet';
+                    this.sheetSubTab = 'progress'; // 必ず「試合進行」から
                     this.announcement = ''; // アナウンスをリセット
-                    this.showMessage('試合を開始しました', 'success');
-                },
-
-                // ヘルパー関数
-                getPlayer(id) {
-                    return this.players.find(p => p.id === id) || { name: '?', furigana: '', number: '?', grade: '' };
-                },
-                getPlayerName(id) {
-                    return this.getPlayer(id).name;
-                },
-                getPlayerNumber(id) {
-                    return this.getPlayer(id).number;
-                },
-                getPositionName(id) {
-                    return this.positions.find(p => p.id === id)?.name || '?';
-                },
-                getStarterByPos(posId) {
-                    return this.lineup.starters.find(s => s.position === posId);
-                },
-                getStarterByPlayerId(playerId) {
-                    return this.lineup.starters.find(s => s.playerId === playerId);
-                },
-                getStarterIndex(playerId) {
-                    return this.lineup.starters.findIndex(s => s.playerId === playerId);
-                },
-
-                // アナウンス生成
-                generatePositionChange() {
-                    const input = this.changeForm.positionInput.replace(/[^0-9\-]/g, ''); // 数字とハイフン以外を除去
-                    const posChain = input.split('-').filter(Boolean); //例: ['4', '1', '5', '2']
                     
-                    if (posChain.length < 2) {
-                        this.showMessage('守備位置交代は 4-1 のように2つ以上入力してください', 'error');
-                        return;
-                    }
-
-                    let announcements = [];
-                    let details = [];
-
-                    for (let i = 0; i < posChain.length - 1; i++) {
-                        const fromPos = posChain[i]; // 例: 4
-                        const toPos = posChain[i+1]; // 例: 1
-
-                        const player = this.getStarterByPos(fromPos);
-                        if (!player) {
-                            this.showMessage(`現在の ${this.getPositionName(fromPos)} の選手が見つかりません`, 'error');
-                            continue;
-                        }
-                        
-                        const playerName = this.getPlayerName(player.playerId);
-                        const fromPosName = this.getPositionName(fromPos);
-                        const toPosName = this.getPositionName(toPos);
-                        
-                        announcements.push(`${fromPosName}、${playerName}くんが、${toPosName}に入り`);
-                    }
-
-                    // 最後の選手 (例: 2) が最初の守備位置 (例: 4) に入る
-                    const lastPos = posChain[posChain.length - 1]; // 2
-                    const firstPos = posChain[0]; // 4
-                    const lastPlayer = this.getStarterByPos(lastPos);
-                    if (!lastPlayer) {
-                        this.showMessage(`現在の ${this.getPositionName(lastPos)} の選手が見つかりません`, 'error');
-                        return;
-                    }
-                    announcements.push(`${this.getPositionName(lastPos)}、${this.getPlayerName(lastPlayer.playerId)}くんが、${this.getPositionName(firstPos)}に入ります。`);
-                    
-                    // アナウンス文を連結
-                    let fullAnnc = "ありんこアントス守備位置の交代をお知らせします。\n\n";
-                    fullAnnc += announcements.join('、') + "\n\n";
-
-                    // 交代後の打順と守備位置を生成
-                    // 実際のlineup.startersを更新
-                    let newStarters = JSON.parse(JSON.stringify(this.lineup.starters));
-                    let changes = []; // { playerId, newPos }
-                    
-                    for (let i = 0; i < posChain.length; i++) {
-                        const fromPos = posChain[i];
-                        const toPos = (i === posChain.length - 1) ? posChain[0] : posChain[i+1]; // 循環
-                        
-                        const player = this.getStarterByPos(fromPos); // 元の守備位置の選手
-                        if (player) {
-                            changes.push({ playerId: player.playerId, newPos: toPos });
-                        }
-                    }
-
-                    // 変更を適用
-                    changes.forEach(change => {
-                        const starter = newStarters.find(s => s.playerId === change.playerId);
-                        if(starter) {
-                            starter.position = change.newPos;
-                        }
-                    });
-
-                    // 新しいラインナップで詳細を生成
-                    newStarters.forEach((starter, index) => {
-                        const posName = this.getPositionName(starter.position);
-                        const playerName = this.getPlayerName(starter.playerId);
-                        details.push(`${index + 1}番、${posName}、${playerName}くん。`);
-                    });
-                    
-                    fullAnnc += details.join('\n');
-                    
-                    this.announcement = fullAnnc;
-                    
-                    // 実際のラインナップを更新
-                    this.lineup.starters = newStarters;
-                    // フォームリセット
-                    this.changeForm.positionInput = '';
-                },
-
-                generateSubstitution() {
-                    const { subOutPlayer, subInPlayer, subInPosition } = this.changeForm;
-                    if (!subOutPlayer || !subInPlayer || !subInPosition) {
-                        this.showMessage('交代する選手、出場する選手、新しい守備位置をすべて選択してください', 'error');
-                        return;
-                    }
-                    
-                    const outPlayer = this.getPlayer(subOutPlayer);
-                    const inPlayer = this.getPlayer(subInPlayer);
-                    const outStarter = this.getStarterByPlayerId(subOutPlayer);
-                    const outPositionName = this.getPositionName(outStarter.position);
-                    const inPositionName = this.getPositionName(subInPosition);
-                    const orderIndex = this.getStarterIndex(subOutPlayer);
-                    const orderNum = orderIndex + 1;
-                    
-                    let annc = "ありんこアントス選手の交代をお知らせします。\n\n";
-                    annc += `${outPositionName}、${outPlayer.name}くんに代わりまして、${inPlayer.name}くんが、${inPositionName}に入ります。\n\n`;
-                    annc += `${orderNum}番、${inPositionName}、${inPlayer.name}くん。背番号${inPlayer.number}。`;
-
-                    this.announcement = annc;
-
-                    // 実際のラインナップを更新
-                    // 1. スタメンからoutPlayerを削除
-                    this.lineup.starters.splice(orderIndex, 1);
-                    // 2. 控えからinPlayerを削除
-                    this.lineup.bench = this.lineup.bench.filter(id => id !== subInPlayer);
-                    // 3. スタメンの同じ打順にinPlayerを追加
-                    this.lineup.starters.splice(orderIndex, 0, { playerId: subInPlayer, position: subInPosition });
-                    // 4. 控えにoutPlayerを追加
-                    this.lineup.bench.push(subOutPlayer);
-                    
-                    // フォームリセット
-                    this.resetChangeForm();
-                },
-                
-                generatePinch() {
-                    const { pinchType, pinchOutPlayer, pinchInPlayer, pinchRunnerBase, pinchAfter, pinchStayPosition, pinchChangeInPlayer, pinchChangeInPosition } = this.changeForm;
-
-                    if (!pinchOutPlayer || !pinchInPlayer) {
-                        this.showMessage('交代する選手と出場する選手を選択してください', 'error');
-                        return;
-                    }
-
-                    const outPlayer = this.getPlayer(pinchOutPlayer);
-                    const inPlayer = this.getPlayer(pinchInPlayer);
-                    const orderIndex = this.getStarterIndex(pinchOutPlayer);
-                    const orderNum = orderIndex + 1;
-
-                    let annc = "ありんこアントス選手の交代をお知らせします。\n\n";
-                    
-                    if (pinchType === 'hitter') {
-                        // 代打
-                        annc += `【代打】${orderNum}番、${outPlayer.name}くんに代わりまして、代打${inPlayer.name}くん、背番号${inPlayer.number}。\n`;
-                    } else {
-                        // 代走
-                        if (!pinchRunnerBase) {
-                            this.showMessage('代走の塁を入力してください (例: 1塁)', 'error');
-                            return;
-                        }
-                        annc += `【代走】${pinchRunnerBase}走者、${outPlayer.name}くんに代わりまして、代走${inPlayer.name}くん、背番号${inPlayer.number}。\n`;
-                    }
-                    
-                    // 攻撃終了後のアナウンス
-                    if (pinchAfter) {
-                        annc += "\n★攻撃が終了して、審判から報告があったら...\n\n";
-                        
-                        if (pinchAfter === 'stay') {
-                            if (!pinchStayPosition) {
-                                this.showMessage('そのまま守備につく場合の守備位置を選択してください', 'error');
-                                return;
-                            }
-                            const stayPosName = this.getPositionName(pinchStayPosition);
-                            annc += `●先ほど、代${pinchType === 'hitter' ? '打' : '走'}に出ました${inPlayer.name}くん、そのまま${stayPosName}を守ります。\n`;
-                            annc += `${orderNum}番、${stayPosName}、${inPlayer.name}くん。背番号${inPlayer.number}。`;
-                            
-                            // ラインナップ更新 (代打/代走) -> 守備
-                            this.updateLineupForPinch(outPlayer.id, inPlayer.id, pinchStayPosition, orderIndex);
-
-                        } else if (pinchAfter === 'change') {
-                            if (!pinchChangeInPlayer || !pinchChangeInPosition) {
-                                this.showMessage('さらに交代する選手と守備位置を選択してください', 'error');
-                                return;
-                            }
-                            const changeInPlayer = this.getPlayer(pinchChangeInPlayer);
-                            const changePosName = this.getPositionName(pinchChangeInPosition);
-                            
-                            annc += `●代${pinchType === 'hitter' ? '打' : '走'}、${inPlayer.name}くんに代わりまして、${changeInPlayer.name}くんが${changePosName}に入ります。\n`;
-                            annc += `${orderNum}番、${changePosName}、${changeInPlayer.name}くん。背番号${changeInPlayer.number}。`;
-
-                            // ラインナップ更新 (代打/代走) -> 守備 (再交代)
-                            this.updateLineupForPinch(outPlayer.id, changeInPlayer.id, pinchChangeInPosition, orderIndex, pinchInPlayer);
-                        }
-                    } else {
-                        // 攻撃終了後のアナウンスがない場合（代打/代走のみ）
-                        // この時点ではスタメン変更はせず、控え選手の移動だけ行う
-                        // (ただし、このアプリでは簡略化し、 pinchAfter が選択されることを前提とするか、
-                        // 守備につかない場合は自動で控えに戻す処理が必要)
-                        // 現状では、守備につかない場合はラインナップは変更しない（次の交代で処理）
-                        annc += "\n(守備にはつきません)";
-                    }
-
-                    this.announcement = annc;
-                    // フォームリセット
-                    this.resetChangeForm();
-                },
-
-                updateLineupForPinch(outPlayerId, inPlayerId, inPosition, orderIndex, pinchPlayerId = null) {
-                    // pinchPlayerId は、代打(inPlayerId) -> 守備(pinchPlayerId) のように
-                    // 代打/代走選手と、その後の守備選手が異なる場合
-                    
-                    const finalInPlayerId = pinchPlayerId || inPlayerId;
-                    
-                    // 1. スタメンからoutPlayerを削除
-                    this.lineup.starters.splice(orderIndex, 1);
-                    // 2. スタメンの同じ打順に finalInPlayerId を追加
-                    this.lineup.starters.splice(orderIndex, 0, { playerId: finalInPlayerId, position: inPosition });
-                    // 3. 控えにoutPlayerIdを追加
-                    this.lineup.bench.push(outPlayerId);
-                    
-                    // 4. 控えから選手を削除
-                    this.lineup.bench = this.lineup.bench.filter(id => id !== inPlayerId);
-                    if (pinchPlayerId) {
-                        // 代打/代走選手も控えから削除 (すでに削除されてるかもだが念のため)
-                        this.lineup.bench = this.lineup.bench.filter(id => id !== pinchPlayerId);
-                        // 代打/代走選手 (inPlayerId) は控えに戻す (試合には出たが守備にはつかない)
-                        this.lineup.bench.push(inPlayerId);
-                    }
-                },
-
-                resetChangeForm() {
-                    this.changeForm = {
-                        positionInput: '',
-                        subOutPlayer: '',
-                        subInPlayer: '',
-                        subInPosition: '',
-                        pinchType: 'hitter',
-                        pinchOutPlayer: '',
-                        pinchInPlayer: '',
-                        pinchRunnerBase: '',
-                        pinchAfter: '',
-                        pinchStayPosition: '',
-                        pinchChangeInPlayer: '',
-                        pinchChangeInPosition: '',
+                    // 試合進行状況もリセット
+                    this.progress = {
+                        inning: 1,
+                        topOrBottom: 'top',
+                        myTeamScore: 0,
+                        opponentScore: 0,
+                        battingOrderIndex: { first: 0, second: 0 }
                     };
                 },
 
-                // ユーティリティ
-                showMessage(text, type = 'success', duration = 3000) {
-                    this.message = { text, type };
-                    setTimeout(() => {
-                        this.message.text = '';
-                    }, duration);
-                },
-                copyToClipboard(text) {
-                    // navigator.clipboard が undefined (http接続など) の場合を考慮
-                    if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(text)
-                            .then(() => {
-                                this.showMessage('クリップボードにコピーしました', 'success');
-                            })
-                            .catch(err => {
-                                this.showMessage('コピーに失敗しました', 'error');
-                            });
+                // --- アナウンスシート (3. Sheet) ---
+
+                // -- 3a. 試合進行 --
+                nextInningState() {
+                    if (this.progress.topOrBottom === 'top') {
+                        this.progress.topOrBottom = 'bottom';
                     } else {
-                        // フォールバック (textarea)
-                        const textArea = document.createElement('textarea');
-                        textArea.value = text;
-                        textArea.style.position = 'fixed'; // 画面外
-                        textArea.style.left = '-9999px';
-                        document.body.appendChild(textArea);
-                        textArea.focus();
-                        textArea.select();
-                        try {
-                            const successful = document.execCommand('copy');
-                            if (successful) {
-                                this.showMessage('クリップボードにコピーしました', 'success');
-                            } else {
-                                this.showMessage('コピーに失敗しました', 'error');
-                            }
-                        } catch (err) {
-                            this.showMessage('コピーに失敗しました', 'error');
-                        }
-                        document.body.removeChild(textArea);
+                        this.progress.topOrBottom = 'top';
+                        this.progress.inning++;
                     }
-                }
-            }));
-        });
+                },
+                prevInningState() {
+                    if (this.progress.topOrBottom === 'bottom') {
+                        this.progress.topOrBottom = 'top';
+                    } else if (this.progress.inning > 1) {
+                        this.progress.topOrBottom = 'bottom';
+                        this.progress.inning--;
+                    }
+                },
+                
+                // アナウンス文生成 (試合進行)
+                generatePreGameLineupCall() {
+                    const side = this.game.myTeamSide === 'firstBase' ? '一塁側' : '三塁側';
+                    const opponentSide = this.game.myTeamSide === 'firstBase' ? '三塁側' : '一塁側';
+                    
+                    this.announcement = `本日の第 ( ) 試合、(${side}) ありんこアントス と (${opponentSide}) ${this.game.opponentName || '(対戦相手)'} の試合です。\n\n「メンバー表を持って、ネット裏本部までお越しください。」\n\n「この監督・キャプテンはシートノックの準備をしてください。」`;
+                },
+                generateKnockCall(team) { // 'first' (先攻), 'second' (後攻)
+                    const teamName = (team === this.game.myTeamAttack) ? 'ありんこアントス' : (this.game.opponentName || '(対戦相手)');
+                    const type = (team === 'first') ? '(先攻)' : '(後攻)';
+                    
+                    this.announcement = `(${type}) ${teamName} \n\n「シートノックを開始してください。時間は5分です。」\n...\n「シートノック、残り1分です。」\n「シートノック時間です。」`;
+                },
+                generateStartingMemberCall(team) { // 'ants', 'opponent'
+                    if (!this.game.started) {
+                        this.showMessage('先に「試合設定」タブで「試合開始」ボタンを押してください。', 'error');
+                        this.activeTab = 'setup';
+                        return;
+                    }
+                    if (team === 'ants') {
+                        const teamType = (this.game.myTeamAttack === 'first') ? '先攻' : '後攻';
+                        let text = `お待たせいたしました。\nただいまより本日の第 ( ) 試合、\n${teamType} (ありんこアントス) のスターティングメンバー並びに控え選手をご紹介致します。\n\n`;
+                        
+                        this.lineup.starters.forEach((starter, i) => {
+                            const player = this.getPlayer(starter.playerId);
+                            const pos = this.getPositionName(starter.position);
+                            text += `${i + 1}番、(${pos || ' '})、(${player?.name || ' '})くん、背番号 (${player?.number || ' '})。\n`;
+                        });
+                        
+                        text += "\n控え選手は、\n";
+                        if (this.lineup.bench.length > 0) {
+                            this.lineup.bench.forEach(playerId => {
+                                const player = this.getPlayer(playerId);
+                                text += `(${player?.name || ' '})くん、背番号 (${player?.number || ' '})。\n`;
+                            });
+                        } else {
+                            text += "控え選手はおりません。\n";
+                        }
+                        this.announcement = text;
+                        
+                    } else { // 相手チーム
+                        const teamType = (this.game.myTeamAttack === 'first') ? '後攻' : '先攻';
+                        this.announcement = `続きまして、${teamType} (${this.game.opponentName || '(対戦相手)'}) のスターティングメンバーをご紹介致します。\n\n`;
+                        this.announcement += `(※相手チームのメンバー表に従ってアナウンスしてください)\n\n例:\n1番、(守備位置)、(氏名)くん、背番号 ( )。\n...`;
+                    }
+                },
+                generateUmpireCall() {
+                    this.announcement = `この試合の審判をご紹介致します。\n\n`;
+                    this.announcement += `球審: (${this.game.umpires.plate || ' '})\n`;
+                    this.announcement += `一塁: (${this.game.umpires.first || ' '})\n`;
+                    this.announcement += `二塁: (${this.game.umpires.second || ' '})\n`;
+                    this.announcement += `三塁: (${this.game.umpires.third || ' '})\n\n`;
+                    this.announcement += `以上の4氏でございます。\n\n`;
+                    this.announcement += `本日の放送担当は ( ) が担当します。`;
+                },
+                generateFieldCall() {
+                    // 現在のイニングがアントスの守備回か判定
+                    const isAntsDefense = (this.progress.topOrBottom === 'top' && this.game.myTeamAttack === 'second') || 
+                                          (this.progress.topOrBottom === 'bottom' && this.game.myTeamAttack === 'first');
+                    
+                    if (!isAntsDefense) {
+                        this.announcement = `${this.progress.inning}回 ${this.progress.topOrBottom === 'top' ? '表' : '裏'}、${this.game.opponentName || '(対戦相手)'} の守備を紹介します。\n\n(※相手チームの守備位置をアナウンスしてください)`;
+                        return;
+                    }
+                    
+                    // アントスの守備紹介
+                    let text = `${this.progress.inning}回 ${this.progress.topOrBottom === 'top' ? '表' : '裏'}、ありんこアントス、守備につきます。\n守備位置の紹介をいたします。\n\n`;
+                    
+                    const positionsOrder = ['1', '2', '3', '4', '5', '6', '7', '8', '9']; // ピッチャーから
+                    const playersByPos = {};
+                    this.lineup.starters.forEach(s => {
+                        playersByPos[s.position] = this.getPlayer(s.playerId);
+                    });
+                    
+                    positionsOrder.forEach(posId => {
+                        const posName = this.getPositionName(posId);
+                        const player = playersByPos[posId];
+                        text += `${posName}、(${player?.name || ' '})くん。\n`;
+                    });
+                    
+                    this.announcement = text;
+                },
+                generateInningAttackCall() {
+                    const inningText = `${this.progress.inning}回 ${this.progress.topOrBottom === 'top' ? '表' : '裏'}`;
+                    
+                    // アントスの攻撃回か判定
+                    const isAntsAttack = (this.progress.topOrBottom === 'top' && this.game.myTeamAttack === 'first') || 
+                                         (this.progress.topOrBottom === 'bottom' && this.game.myTeamAttack === 'second');
+                    
+                    if (!isAntsAttack) {
+                        this.announcement = `${inningText}、${this.game.opponentName || '(対戦相手)'} の攻撃は、\n\n(※相手チームの打順をアナウンスしてください)`;
+                        return;
+                    }
+                    
+                    // アントスの攻撃
+                    let text = `${inningText}、ありんこアントス の攻撃は、\n\n`;
+                    
+                    // 現在の打順インデックスを取得
+                    const attackKey = (this.game.myTeamAttack === 'first') ? 'first' : 'second';
+                    let currentIndex = this.progress.battingOrderIndex[attackKey];
+                    
+                    const starter = this.lineup.starters[currentIndex];
+                    const player = this.getPlayer(starter.playerId);
+                    const posName = this.getPositionName(starter.position);
+                    const order = currentIndex + 1;
+                    
+                    text += `${order}番、(${posName || ' '})、(${player?.name || ' '})くん、背番号 (${player?.number || ' '})。\n`;
+                    text += `${order}番、(${posName || ' '})、(${player?.name || ' '})くん。`;
+                    
+                    // 次の打順インデックスを更新 (9番なら0番に戻る)
+                    this.progress.battingOrderIndex[attackKey] = (currentIndex + 1) % 9;
+                    
+                    this.announcement = text;
+                },
+                generateInningScoreCall() {
+                    const inningText = `${this.progress.inning}回 ${this.progress.topOrBottom === 'top' ? '表' : '裏'}`;
+                    this.announcement = `${inningText} の得点は ( ) 点です。`;
+                },
+                generateGameEndCall() {
+                    let winner, loser, winnerScore, loserScore;
+                    
+                    if (this.progress.myTeamScore > this.progress.opponentScore) {
+                        winner = 'ありんこアントス';
+                        winnerScore = this.progress.myTeamScore;
+                        loser = this.game.opponentName || '(対戦相手)';
+                        loserScore = this.progress.opponentScore;
+                    } else if (this.progress.opponentScore > this.progress.myTeamScore) {
+                        winner = this.game.opponentName || '(対戦相手)';
+                        winnerScore = this.progress.opponentScore;
+                        loser = 'ありんこアントス';
+                        loserScore = this.progress.myTeamScore;
+                    } else {
+                        // 引き分け
+                        this.announcement = `本日の第 ( ) 試合、ありんこアントス 対 ${this.game.opponentName || '(対戦相手)'} は、\n${this.progress.myTeamScore} 対 ${this.progress.opponentScore}、引き分けとなりました。`;
+                        return;
+                    }
+                    
+                    this.announcement = `本日の第 ( ) 試合、\n${winner} 対 ${loser} は、\n${winnerScore} 対 ${loserScore} をもちまして、\n${winner} の勝ちとなりました。\n\n「両チームの監督・コーチはベンチの移動とグランド整備にご協力ください。」`;
+                },
+                
+                // -- 3b. 選手交代 --
+                generatePositionChange() {
+                    const input = this.changeForms.positionChange.replace(/[^1-9\-]/g, ''); // 数字とハイフン以外を除去
+                    if (!input) {
+                        this.showMessage('守備位置番号をハイフン(-)でつないで入力してください。例: 4-1', 'error');
+                        return;
+                    }
+                    const posIds = input.split('-').filter(Boolean); // "4", "1"
+                    if (posIds.length < 2) {
+                        this.showMessage('最低2つの守備位置を入力してください。', 'error');
+                        return;
+                    }
+
+                    let text = "ありんこアントス、守備位置の交代をお知らせします。\n\n";
+                    let changes = []; // アナウンス用の変更履歴 { posName, playerName }
+                    
+                    for (let i = 0; i < posIds.length; i++) {
+                        const currentPosId = posIds[i];
+                        const nextPosId = posIds[(i + 1) % posIds.length]; // 最後は最初に戻る
+
+                        // 現在の守備位置(currentPosId)にいる選手を探す
+                        const currentPlayer = this.lineup.starters.find(s => s.position === currentPosId);
+                        if (!currentPlayer) {
+                            this.showMessage(`エラー: ${this.getPositionName(currentPosId)} に選手がいません。`, 'error');
+                            return;
+                        }
+                        
+                        const playerName = this.getPlayerName(currentPlayer.playerId);
+                        const nextPosName = this.getPositionName(nextPosId);
+                        
+                        text += `(${this.getPositionName(currentPosId)})、(${playerName})くんが、(${nextPosName})に入り、\n`;
+                        
+                        // 変更リストの末尾に追加
+                        changes.push({
+                            posName: nextPosName,
+                            playerName: playerName,
+                            playerId: currentPlayer.playerId
+                        });
+                    }
+                    text = text.slice(0, -2) + "ます。\n\n"; // 最後の改行と「、」を削除して「ます。」に
+
+                    // 変更リストの最後から、打順と守備位置のアナウンスを生成
+                    if (changes.length >= 2) {
+                        const last = changes[changes.length - 1];
+                        const secondLast = changes[changes.length - 2];
+                        
+                        const order1 = this.getBattingOrder(secondLast.playerId);
+                        const order2 = this.getBattingOrder(last.playerId);
+
+                        text += `(${order1 || ' '})番、(${secondLast.posName || ' '})、(${secondLast.playerName || ' '})くん。\n`;
+                        text += `(${order2 || ' '})番、(${last.posName || ' '})、(${last.playerName || ' '})くん。\n`;
+                    } else if (changes.length === 1) { 
+                         const change = changes[0];
+                         const order = this.getBattingOrder(change.playerId);
+                         text += `(${order || ' '})番、(${change.posName || ' '})、(${change.playerName || ' '})くん。\n`;
+                    }
+                    
+                    // lineupデータも更新 (重要)
+                    const newStarters = JSON.parse(JSON.stringify(this.lineup.starters));
+                    for (let i = 0; i < posIds.length; i++) {
+                        const currentPosId = posIds[i];
+                        const nextPosId = posIds[(i + 1) % posIds.length];
+                        
+                        const starterIndex = newStarters.findIndex(s => s.position === currentPosId);
+                        if (starterIndex !== -1) {
+                            newStarters[starterIndex].position = nextPosId;
+                        }
+                    }
+                    this.lineup.starters = newStarters;
+                    
+                    this.announcement = text;
+                    this.changeForms.positionChange = ''; // フォームリセット
+                    this.showMessage('守備交代アナウンスを生成しました。ラインナップも更新されました。');
+                },
+
+                generatePlayerChange() {
+                    const { outPlayerId, inPlayerId, newPosition } = this.changeForms.playerChange;
+                    if (!outPlayerId || !inPlayerId || !newPosition) {
+                        this.showMessage('全ての項目を選択してください。', 'error');
+                        return;
+                    }
+                    
+                    const outPlayer = this.getPlayer(outPlayerId);
+                    const inPlayer = this.getPlayer(inPlayerId);
+                    const outStarter = this.lineup.starters.find(s => s.playerId === outPlayerId);
+                    
+                    if (!outPlayer || !inPlayer || !outStarter) {
+                        this.showMessage('選手情報が正しく取得できませんでした。', 'error');
+                        return;
+                    }
+                    
+                    const outPositionName = this.getPositionName(outStarter.position);
+                    const newPositionName = this.getPositionName(newPosition);
+                    const battingOrder = this.getBattingOrder(outPlayerId);
+                    
+                    let text = "ありんこアントス、選手の交代をお知らせします。\n\n";
+                    text += `(${outPositionName || ' '})、(${outPlayer.name})くんに代わりまして、(${inPlayer.name})くんが、(${newPositionName})に入ります。\n\n`;
+                    text += `(${battingOrder})番、(${newPositionName})、(${inPlayer.name})くん。背番号 (${inPlayer.number || ' '})。`;
+                    
+                    // lineupデータ更新
+                    this.lineup.starters = this.lineup.starters.map(s => {
+                        if (s.playerId === outPlayerId) {
+                            return { playerId: inPlayerId, position: newPosition };
+                        }
+                        return s;
+                    });
+                    this.lineup.bench = this.lineup.bench.filter(id => id !== inPlayerId);
+                    this.lineup.bench.push(outPlayerId); // 控えに戻す
+                    
+                    this.announcement = text;
+                    this.changeForms.playerChange = { outPlayerId: '', inPlayerId: '', newPosition: '' };
+                    this.showMessage('選手交代アナウンスを生成しました。ラインナップも更新されました。');
+                },
+
+                generatePinchHitter() {
+                    const { outPlayerId, inPlayerId } = this.changeForms.pinchHitter;
+                    if (!outPlayerId || !inPlayerId) {
+                        this.showMessage('両方の選手を選択してください。', 'error');
+                        return;
+                    }
+                    
+                    const outPlayer = this.getPlayer(outPlayerId);
+                    const inPlayer = this.getPlayer(inPlayerId);
+                    const battingOrder = this.getBattingOrder(outPlayerId);
+
+                    if (!outPlayer || !inPlayer || !battingOrder) {
+                        this.showMessage('選手情報が正しく取得できませんでした。', 'error');
+                        return;
+                    }
+                    
+                    let text = "ありんこアントス、選手の交代をお知らせします。\n\n";
+                    text += `【代打】 (${battingOrder})番、(${outPlayer.name})くんに代わりまして、代打 (${inPlayer.name})くん、背番号 (${inPlayer.number || ' '})。`;
+                    
+                    // lineupデータ更新 (代打)
+                    this.lineup.starters = this.lineup.starters.map(s => {
+                        if (s.playerId === outPlayerId) {
+                            return { playerId: inPlayerId, position: 'PH' }; // 'PH' = 代打
+                        }
+                        return s;
+                    });
+                    this.lineup.bench = this.lineup.bench.filter(id => id !== inPlayerId);
+                    this.lineup.bench.push(outPlayerId);
+                    
+                    this.announcement = text;
+                    this.changeForms.pinchHitter = { outPlayerId: '', inPlayerId: '' };
+                    this.showMessage('代打アナウンスを生成しました。ラインナップも更新されました。');
+                },
+
+                generatePinchRunner() {
+                    const { outPlayerId, inPlayerId, base } = this.changeForms.pinchRunner;
+                    if (!outPlayerId || !inPlayerId) {
+                        this.showMessage('両方の選手を選択してください。', 'error');
+                        return;
+                    }
+                    
+                    const outPlayer = this.getPlayer(outPlayerId);
+                    const inPlayer = this.getPlayer(inPlayerId);
+                    
+                    if (!outPlayer || !inPlayer) {
+                        this.showMessage('選手情報が正しく取得できませんでした。', 'error');
+                        return;
+                    }
+                    
+                    let text = "ありんこアントス、選手の交代をお知らせします。\n\n";
+                    text += `【代走】 (${base})塁走者、(${outPlayer.name})くんに代わりまして、代走 (${inPlayer.name})くん、背番号 (${inPlayer.number || ' '})。`;
+                    
+                    // lineupデータ更新 (代走)
+                    const starterIndex = this.lineup.starters.findIndex(s => s.playerId === outPlayerId);
+                    if (starterIndex !== -1) {
+                        // スタメンが交代
+                        this.lineup.starters[starterIndex].playerId = inPlayerId;
+                        this.lineup.starters[starterIndex].position = 'PR'; // 'PR' = 代走
+                        
+                        this.lineup.bench = this.lineup.bench.filter(id => id !== inPlayerId);
+                        this.lineup.bench.push(outPlayerId);
+                    } else {
+                        // スタメン以外の選手(例: 代打で出た選手)が交代
+                        // このロジックは簡略化のため、控え同士の交代はデータに反映しない (アナウンスのみ)
+                        this.lineup.bench = this.lineup.bench.filter(id => id !== inPlayerId);
+                        // OUT選手が控えにいない場合は、追加する
+                        if (!this.lineup.bench.includes(outPlayerId)) {
+                             this.lineup.bench.push(outPlayerId);
+CI }
+                    }
+                    
+                    this.announcement = text;
+                    this.changeForms.pinchRunner = { outPlayerId: '', inPlayerId: '', base: '一' };
+                    this.showMessage('代走アナウンスを生成しました。ラインナップも更新されました。');
+                },
+                
+            }))
+        })
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
+
 </body>
 </html>
