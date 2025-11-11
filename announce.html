@@ -12,25 +12,14 @@
         body {
             font-family: 'Inter', 'Noto Sans JP', sans-serif;
         }
-        /* 守備位置の番号（入力フィールド用） */
-        .position-input {
-            width: 40px;
-            height: 40px;
-            text-align: center;
-            border-radius: 50%;
-            border: 2px solid #ddd;
-            font-weight: bold;
-            color: #333;
-        }
-        .position-input:focus {
-            outline: none;
-            border-color: #3b82f6; /* blue-500 */
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-        }
         /* アクティブな打順をハイライト */
         .active-batter {
             background-color: #eff6ff; /* blue-50 */
             border-left: 4px solid #3b82f6; /* blue-500 */
+        }
+        /* ファイル入力は非表示 */
+        .hidden-file-input {
+            display: none;
         }
     </style>
 </head>
@@ -42,19 +31,31 @@
 
         <!-- データ操作エリア -->
         <div class="mb-6 p-4 bg-white rounded-lg shadow">
-            <h2 class="text-lg font-semibold mb-3">データ操作</h2>
+            <h2 class="text-lg font-semibold mb-3">データ操作 (localStorage)</h2>
             <div class="flex flex-wrap gap-3">
                 <button id="saveData" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    現在の状態を保存
+                    ブラウザに保存
                 </button>
                 <button id="loadData" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    保存した状態を読み込む
+                    ブラウザから読込
                 </button>
                 <button id="resetData" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    データをリセット
+                    リセット
                 </button>
             </div>
             <p id="storageStatus" class="text-sm text-gray-500 mt-2"></p>
+            
+            <h2 class="text-lg font-semibold mb-3 mt-4">データ操作 (ファイル)</h2>
+            <div class="flex flex-wrap gap-3">
+                <button id="exportData" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                    ファイルに書き出し (DL)
+                </button>
+                <button id="importData" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                    ファイルから読み込み (UL)
+                </button>
+                <input type="file" id="fileInput" accept=".json" class="hidden-file-input">
+            </div>
+            <p id="fileStatus" class="text-sm text-gray-500 mt-2"></p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -74,9 +75,18 @@
                             <input type="text" id="gameVenue" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
                         <div>
+                            <label for="myTeamName" class="block text-sm font-medium text-gray-700 mb-1">自チーム名</label>
+                            <input type="text" id="myTeamName" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
                             <label for="opponentTeam" class="block text-sm font-medium text-gray-700 mb-1">相手チーム名</label>
                             <input type="text" id="opponentTeam" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
+                        <div>
+                            <label for="broadcaster" class="block text-sm font-medium text-gray-700 mb-1">放送担当</label>
+                            <input type="text" id="broadcaster" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+
                         <div class="md:col-span-2">
                             <span class="block text-sm font-medium text-gray-700 mb-1">先攻 / 後攻</span>
                             <div class="flex gap-4">
@@ -178,8 +188,11 @@
                         </div>
                         <!-- 守備位置一括変更 -->
                         <div>
-                            <h3 class="text-lg font-semibold mb-3">守備位置 一括変更 (玉突き)</h3>
-                            <p class="text-sm text-gray-600 mb-2">例: 「4-6, 6-4」 (セカンドとショート入替)<br>例: 「4-3-1」 (セカンド→ファースト、ファースト→ピッチャー、ピッチャー→？)</p>
+                            <h3 class="text-lg font-semibold mb-3">守備位置 一括変更</h3>
+                            <p class="text-sm text-gray-600 mb-2">
+                                交換 (例: 4-6, 6-4) ※セカンドとショート入替<br>
+                                玉突き (例: 4-3-1) ※セカンド→ファースト、ファースト→ピッチャー、ピッチャー→ベンチ
+                            </p>
                             <input type="text" id="multiSubInput" placeholder="例: 4-6, 6-4" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 mb-3">
                             <button id="executeMultiSub" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow">
                                 一括変更を実行
@@ -232,10 +245,13 @@
                     <div class="grid grid-cols-2 gap-3 mb-4">
                         <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="preGame">試合開始前</button>
                         <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="startMember">スタメン発表</button>
+                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="umpireIntro">審判紹介</button>
                         <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg" data-type="inningStart">イニング開始</button>
                         <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg" data-type="batterUp">打者紹介</button>
                         <button class="announce-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 px-3 rounded-lg" data-type="substitution">選手交代</button>
-                        <button class="announce-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 px-3 rounded-lg" data-type="umpireIntro">審判紹介</button>
+                        <button class="announce-btn bg-red-100 hover:bg-red-200 text-red-800 py-2 px-3 rounded-lg" data-type="gameEnd">試合終了</button>
+                        <button class="announce-btn bg-gray-100 text-gray-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockPre" id="btnSheetKnockPre">シートノック(先)</button>
+                        <button class="announce-btn bg-gray-100 text-gray-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockPost" id="btnSheetKnockPost">シートノック(後)</button>
                     </div>
 
                     <!-- アナウンス表示エリア -->
@@ -278,6 +294,7 @@
 
         // --- 状態管理 ---
         let gameState = {};
+        const STORAGE_KEY = 'baseballAnnounceToolState';
 
         // デフォルトの状態
         function getDefaultState() {
@@ -285,7 +302,9 @@
                 gameInfo: {
                     title: "",
                     venue: "",
+                    myTeamName: "", // 自チーム名を追加
                     opponent: "",
+                    broadcaster: "", // 放送担当を追加
                     playOrder: "second", // 'first' or 'second'
                     umpires: { pl: "", "1b": "", "2b": "", "3b": "" }
                 },
@@ -318,7 +337,6 @@
 
                 const close = (value) => {
                     modal.style.display = 'none';
-                    // イベントリスナーをクローンして置き換えることで、古いリスナーを削除
                     okBtn.replaceWith(okBtn.cloneNode(true));
                     cancelBtn.replaceWith(cancelBtn.cloneNode(true));
                     resolve(value);
@@ -335,7 +353,9 @@
             const info = gameState.gameInfo;
             document.getElementById('gameTitle').value = info.title || "";
             document.getElementById('gameVenue').value = info.venue || "";
+            document.getElementById('myTeamName').value = info.myTeamName || ""; // 自チーム名
             document.getElementById('opponentTeam').value = info.opponent || "";
+            document.getElementById('broadcaster').value = info.broadcaster || ""; // 放送担当
             document.querySelector(`input[name="playOrder"][value="${info.playOrder}"]`).checked = true;
             document.getElementById('umpirePL').value = info.umpires.pl || "";
             document.getElementById('umpire1B').value = info.umpires["1b"] || "";
@@ -357,8 +377,6 @@
         function renderStartingMembers() {
             const container = document.getElementById('startingMembers');
             container.innerHTML = '';
-            const positionLabels = ["", "P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"];
-
             gameState.roster.starting.forEach((player, i) => {
                 const div = document.createElement('div');
                 div.className = `flex items-center gap-2 p-3 rounded-lg ${i === gameState.gameProgress.currentBatterIndex ? 'active-batter' : 'bg-gray-50'}`;
@@ -410,26 +428,25 @@
             const batter = gameState.roster.starting[progress.currentBatterIndex];
             const display = document.getElementById('currentBatterDisplay');
             
-            // ハイライト更新
             document.querySelectorAll('#startingMembers > div').forEach((div, i) => {
                 div.classList.toggle('active-batter', i === progress.currentBatterIndex);
                 div.classList.toggle('bg-gray-50', i !== progress.currentBatterIndex);
             });
 
-            if (!batter || !batter.name) {
+            if (!batter) {
                 display.textContent = "（選手情報がありません）";
                 return;
             }
 
-            // 攻撃側か守備側か
             const isOurAttack = (gameState.gameInfo.playOrder === 'first' && progress.topOrBottom === 'top') || 
                                 (gameState.gameInfo.playOrder === 'second' && progress.topOrBottom === 'bottom');
 
             if (isOurAttack) {
                 const pos = POSITIONS[batter.position] || '（守備位置未定）';
-                display.textContent = `${batter.order}番 ${batter.name} (${pos})`;
+                display.textContent = batter.name ? `${batter.order}番 ${batter.name} (${pos})` : `（${batter.order}番打者）`;
             } else {
-                display.textContent = `${gameState.gameInfo.opponent}の攻撃 (${batter.order}番～)`;
+                const opponentName = gameState.gameInfo.opponent || '相手チーム';
+                display.textContent = `${opponentName}の攻撃 (${batter.order}番～)`;
             }
         }
 
@@ -441,11 +458,9 @@
             subOut.innerHTML = '<option value="">交代する選手を選択</option>';
             subIn.innerHTML = '<option value="">出場する選手を選択</option>';
 
-            // 交代OUT対象 (スタメン + ベンチで出場中の選手...は複雑なので、一旦スタメン全員)
             gameState.roster.starting.forEach(p => {
                 if(p.name) subOut.innerHTML += `<option value="${p.id}">${p.order}番 ${p.name} (${POSITIONS[p.position] || '？'})</option>`;
             });
-            // 交代IN対象 (ベンチ)
             gameState.roster.bench.forEach(p => {
                 if(p.name) subIn.innerHTML += `<option value="${p.id}">${p.name} (背番号 ${p.number || '？'})</option>`;
             });
@@ -462,16 +477,23 @@
 
             if (id === 'gameTitle') gameState.gameInfo.title = value;
             else if (id === 'gameVenue') gameState.gameInfo.venue = value;
+            else if (id === 'myTeamName') gameState.gameInfo.myTeamName = value; // 自チーム名
             else if (id === 'opponentTeam') gameState.gameInfo.opponent = value;
+            else if (id === 'broadcaster') gameState.gameInfo.broadcaster = value; // 放送担当
             else if (id === 'umpirePL') gameState.gameInfo.umpires.pl = value;
             else if (id === 'umpire1B') gameState.gameInfo.umpires["1b"] = value;
             else if (id === 'umpire2B') gameState.gameInfo.umpires["2b"] = value;
             else if (id === 'umpire3B') gameState.gameInfo.umpires["3b"] = value;
-            else if (target.name === 'playOrder') gameState.gameInfo.playOrder = value;
+            else if (target.name === 'playOrder') {
+                gameState.gameInfo.playOrder = value;
+                // 先攻/後攻が変わったら打者表示も更新
+                updateCurrentBatterDisplay();
+                // シートノックボタンの有効/無効を切り替え
+                updateSheetKnockButtons(value);
+            }
         });
 
-        // 2. メンバー登録入力
-        // スタメン
+        // 2. メンバー登録入力 (スタメン)
         document.getElementById('startingMembers').addEventListener('input', (e) => {
             const input = e.target;
             const field = input.dataset.field;
@@ -480,12 +502,11 @@
             if (player) {
                 player[field] = input.value;
             }
-            // 打順が更新されたら打者表示も更新
             if(field === 'name' || field === 'position') {
                 updateCurrentBatterDisplay();
             }
         });
-        // ベンチ
+        // メンバー登録入力 (ベンチ)
         document.getElementById('benchMembers').addEventListener('input', (e) => {
             const input = e.target;
             const field = input.dataset.field;
@@ -506,31 +527,32 @@
         document.getElementById('benchMembers').addEventListener('click', (e) => {
             if (e.target.classList.contains('removeBenchPlayer')) {
                 const idToRemove = e.target.dataset.id;
-                gameState.roster.bench = gameState.roster.bench.filter(p => p.id !== idToRemove);
-                renderBenchMembers();
-                updateSubstitutionDropdowns();
+                if (gameState.roster.bench.length > 1) { // 最後の1行は消さない
+                    gameState.roster.bench = gameState.roster.bench.filter(p => p.id !== idToRemove);
+                    renderBenchMembers();
+                    updateSubstitutionDropdowns();
+                }
             }
         });
 
         // 3. 試合進行ボタン
-        // 次の打者
         document.getElementById('nextBatter').addEventListener('click', () => {
             const progress = gameState.gameProgress;
             progress.currentBatterIndex = (progress.currentBatterIndex + 1) % 9;
             renderGameProgress();
+            // 打者紹介を自動生成
+            generateAnnouncement("batterUp");
         });
-        // アウト
         document.getElementById('addOut').addEventListener('click', () => {
             const progress = gameState.gameProgress;
             if (progress.outs < 2) {
                 progress.outs++;
+                renderGameProgress();
             } else {
                 // 3アウトになったら自動でチェンジ
                 changeSides();
             }
-            renderGameProgress();
         });
-        // 3アウトチェンジ
         document.getElementById('changeSides').addEventListener('click', changeSides);
 
         function changeSides() {
@@ -542,10 +564,9 @@
                 progress.topOrBottom = 'top';
                 progress.inning++;
             }
-            // 打順を1番に戻す (イニングの先頭打者)
-            progress.currentBatterIndex = 0; // TODO: 前回の続きから？ 仕様確認。ひとまず1番から。
+            // 打順をイニングの先頭打者に戻す (TODO: 仕様確認。前回の続きからが正しいかも)
+            // progress.currentBatterIndex = 0; 
             renderGameProgress();
-            // アナウンスエリアを自動更新
             generateAnnouncement("inningStart");
         }
 
@@ -562,8 +583,7 @@
         document.getElementById('executeMultiSub').addEventListener('click', handleMultiSubstitution);
 
 
-        // --- データ保存/読込 ---
-        const STORAGE_KEY = 'baseballAnnounceToolState';
+        // --- データ保存/読込 (LocalStorage) ---
         const statusEl = document.getElementById('storageStatus');
 
         document.getElementById('saveData').addEventListener('click', async () => {
@@ -588,18 +608,7 @@
                 return;
             }
             if (await customConfirm("保存されたデータを読み込みます。現在の入力内容は上書きされます。")) {
-                try {
-                    gameState = JSON.parse(savedData);
-                    // 念のためデフォルトとマージ (古いデータ形式対策)
-                    gameState = { ...getDefaultState(), ...gameState };
-                    renderUI();
-                    statusEl.textContent = "データを読み込みました。";
-                    statusEl.className = 'text-sm text-blue-600 mt-2';
-                } catch (e) {
-                    console.error("読込に失敗しました: ", e);
-                    statusEl.textContent = "データの読み込みに失敗しました。データが破損している可能性があります。";
-                    statusEl.className = 'text-sm text-red-600 mt-2';
-                }
+                loadState(savedData, statusEl, "ブラウザからデータを読み込みました。");
             }
         });
 
@@ -614,77 +623,210 @@
             }
         });
 
+        // --- データ保存/読込 (ファイル I/O) ---
+        const fileStatusEl = document.getElementById('fileStatus');
+        const fileInput = document.getElementById('fileInput');
 
-        // --- アナウンス生成ロジック ---
+        document.getElementById('exportData').addEventListener('click', () => {
+            try {
+                const dataStr = JSON.stringify(gameState, null, 2);
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `baseball_announce_${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                fileStatusEl.textContent = "ファイルに書き出しました。";
+                fileStatusEl.className = 'text-sm text-green-600 mt-2';
+            } catch (e) {
+                console.error("ファイル書き出し失敗: ", e);
+                fileStatusEl.textContent = "ファイル書き出しに失敗しました。";
+                fileStatusEl.className = 'text-sm text-red-600 mt-2';
+            }
+        });
+
+        document.getElementById('importData').addEventListener('click', () => {
+            fileInput.value = null; // 同じファイルを選択できるようにリセット
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const fileContent = event.target.result;
+                if (await customConfirm("ファイルからデータを読み込みます。現在の入力内容は上書きされます。")) {
+                    loadState(fileContent, fileStatusEl, "ファイルからデータを読み込みました。");
+                }
+            };
+            reader.onerror = () => {
+                console.error("ファイル読み込み失敗");
+                fileStatusEl.textContent = "ファイル読み込みに失敗しました。";
+                fileStatusEl.className = 'text-sm text-red-600 mt-2';
+            };
+            reader.readAsText(file);
+        });
+
+        // 状態読み込み共通ロジック
+        function loadState(dataString, statusElement, successMessage) {
+            try {
+                const parsedData = JSON.parse(dataString);
+                // 念のためデフォルトとマージ (古いデータ形式対策)
+                gameState = {
+                    ...getDefaultState(),
+                    ...parsedData,
+                    gameInfo: { ...getDefaultState().gameInfo, ...(parsedData.gameInfo || {}) },
+                    roster: { ...getDefaultState().roster, ...(parsedData.roster || {}) },
+                    gameProgress: { ...getDefaultState().gameProgress, ...(parsedData.gameProgress || {}) },
+                };
+                renderUI();
+                statusElement.textContent = successMessage;
+                statusElement.className = 'text-sm text-blue-600 mt-2';
+            } catch (e) {
+                console.error("読込に失敗しました: ", e);
+                statusElement.textContent = "データの読み込みに失敗しました。データが破損している可能性があります。";
+                statusElement.className = 'text-sm text-red-600 mt-2';
+            }
+        }
+
+        // シートノックボタンの有効/無効を切り替え
+        function updateSheetKnockButtons(playOrder) {
+            const btnPre = document.getElementById('btnSheetKnockPre');
+            const btnPost = document.getElementById('btnSheetKnockPost');
+            if (!btnPre || !btnPost) return;
+
+            if (playOrder === 'first') {
+                btnPre.disabled = false;
+                btnPre.classList.remove('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
+                btnPre.classList.add('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+                
+                btnPost.disabled = true;
+                btnPost.classList.add('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
+                btnPost.classList.remove('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+            } else { // second
+                btnPre.disabled = true;
+                btnPre.classList.add('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
+                btnPre.classList.remove('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+
+                btnPost.disabled = false;
+                btnPost.classList.remove('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
+                btnPost.classList.add('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+            }
+        }
+
+
+        // --- アナウンス生成ロジック (画像ベースに修正) ---
         function generateAnnouncement(type) {
             const output = document.getElementById('announceOutput');
             const { gameInfo, roster, gameProgress } = gameState;
-            const { opponent, playOrder } = gameInfo;
+            const { title, venue, myTeamName, opponent, playOrder, umpires, broadcaster } = gameInfo;
             const { inning, topOrBottom } = gameProgress;
             
+            const myTeam = myTeamName || '（自チーム）';
+            const oppTeam = opponent || '（相手チーム）';
             let text = "";
 
             switch(type) {
                 case "preGame":
                     text = `皆様、本日はご来場いただき、誠にありがとうございます。\n`;
-                    text += `本日の試合は、${gameInfo.title || '（大会名）'}、\n`;
-                    text += `${gameInfo.venue || '（試合会場）'}にて行われます。\n`;
-                    text += `試合に先立ちまして、両チームのスターティングメンバー、並びに審判員をお知らせいたします。`;
+                    text += `ただいまより、本日の試合、${title || '（大会名）'}、\n`;
+                    text += `${myTeam} 対 ${oppTeam} の試合を行います。\n`;
+                    text += `試合に先立ちまして、両チームのスターティングメンバー、並びに審判員をお知らせいたします。\n`;
                     break;
 
                 case "startMember":
-                    const ourTeamName = "（自チーム名）"; // TODO: 自チーム名入力欄を追加する
-                    text = `【${playOrder === 'first' ? '先攻' : '後攻'}：${ourTeamName}】\n`;
-                    roster.starting.forEach(p => {
-                        text += `${p.order}番、${POSITIONS[p.position] || '（守備）'}、${p.name || '（名前）'}くん、背番号 ${p.number || '？'}番。\n`;
-                    });
+                    const firstTeam = playOrder === 'first' ? myTeam : oppTeam;
+                    const secondTeam = playOrder === 'first' ? oppTeam : myTeam;
                     
-                    text += `\n【${playOrder === 'first' ? '後攻' : '先攻'}：${opponent || '（相手チーム）'}】\n`;
-                    text += `（相手チームのアナウンス）\n`;
-                    text += `...（相手チームのスタメン）...\n`;
+                    text = `【先攻：${firstTeam}】\n`;
+                    if (playOrder === 'first') {
+                        roster.starting.forEach(p => {
+                            text += `${p.order}番、${POSITIONS[p.position] || '（守備）'}、${p.name || '（名前）'}くん、背番号 ${p.number || '？'}番。\n`;
+                        });
+                        text += `控え選手は、\n`;
+                        roster.bench.filter(p => p.name).forEach(p => {
+                             text += `${p.name}くん、背番号 ${p.number || '？'}番、\n`;
+                        });
+                        if (roster.bench.filter(p => p.name).length > 0) {
+                            text = text.slice(0, -2) + "。\n"; // 最後の「、\n」を「。」に
+                        } else {
+                            text += "（控え選手情報なし）\n";
+                        }
+                    } else {
+                        text += `（相手チームのスタメン...）\n`;
+                        text += `（相手チームの控え選手...）\n`;
+                    }
+                    
+                    text += `\n【後攻：${secondTeam}】\n`;
+                    if (playOrder === 'second') {
+                         roster.starting.forEach(p => {
+                            text += `${p.order}番、${POSITIONS[p.position] || '（守備）'}、${p.name || '（名前）'}くん、背番号 ${p.number || '？'}番。\n`;
+                        });
+                        text += `控え選手は、\n`;
+                        roster.bench.filter(p => p.name).forEach(p => {
+                             text += `${p.name}くん、背番号 ${p.number || '？'}番、\n`;
+                        });
+                        if (roster.bench.filter(p => p.name).length > 0) {
+                            text = text.slice(0, -2) + "。\n"; // 最後の「、\n」を「。」に
+                        } else {
+                            text += "（控え選手情報なし）\n";
+                        }
+                    } else {
+                        text += `（相手チームのスタメン...）\n`;
+                        text += `（相手チームの控え選手...）\n`;
+                    }
+                    text += `以上でございます。\n`;
                     break;
 
                 case "umpireIntro":
-                    text = "続きまして、本日の審判員をご紹介いたします。\n";
-                    text += `球審：${gameInfo.umpires.pl || '（球審）'}、\n`;
-                    text += `一塁塁審：${gameInfo.umpires["1b"] || '（一塁）'}、\n`;
-                    text += `二塁塁審：${gameInfo.umpires["2b"] || '（二塁）'}、\n`;
-                    text += `三塁塁審：${gameInfo.umpires["3b"] || '（三塁）'}、\n`;
-                    text += "以上、四氏により、本日の試合を行います。\n";
-                    text += `試合開始まで、今しばらくお待ちください。`;
+                    text = "この試合の審判は、\n";
+                    text += `球審：${umpires.pl || '（球審）'}、\n`;
+                    text += `一塁：${umpires["1b"] || '（一塁）'}、\n`;
+                    text += `二塁：${umpires["2b"] || '（二塁）'}、\n`;
+                    text += `三塁：${umpires["3b"] || '（三塁）'}\n`;
+                    text += `以上、四氏でございます。\n`;
+                    if (broadcaster) {
+                        text += `本日の放送担当は、${broadcaster} が担当いたします。\n`;
+                    }
                     break;
                     
                 case "inningStart":
                     const isOurAttack = (playOrder === 'first' && topOrBottom === 'top') || (playOrder === 'second' && topOrBottom === 'bottom');
+                    const attackTeam = isOurAttack ? myTeam : oppTeam;
+                    const defenseTeam = isOurAttack ? oppTeam : myTeam;
                     
-                    if (isOurAttack) {
-                        text = `${inning}回 ${topOrBottom === 'top' ? '表' : '裏'}、${opponent || '（相手チーム）'}の守備をお知らせします。\n`;
-                        text += `（相手チームの守備）\n`;
-                        text += `（自チーム）の攻撃は、\n`;
-                        // 現在の打者情報を自動でセット
-                        const batter = roster.starting[gameProgress.currentBatterIndex];
-                        if (batter && batter.name) {
-                             text += `${batter.order}番、${POSITIONS[batter.position] || '（守備）'}、${batter.name || '（名前）'}くん。`;
-                        } else {
-                            text += `${gameProgress.currentBatterIndex + 1}番から...`;
-                        }
+                    text = `${inning}回 ${topOrBottom === 'top' ? '表' : '裏'}、${attackTeam}の攻撃は、\n`;
+
+                    const batter = roster.starting[gameProgress.currentBatterIndex];
+                    if (batter) {
+                        text += `${batter.order}番、${batter.name || '（名前）'}くん、背番号 ${batter.number || '？'}番。`;
                     } else {
-                        text = `${inning}回 ${topOrBottom === 'top' ? '表' : '裏'}、${opponent || '（相手チーム）'}の攻撃は...\n`;
-                        text += `（自チーム）の守備をお知らせします。\n`;
-                        roster.starting.forEach(p => {
-                            if (p.position && p.position !== 'DH') {
-                                text += `${POSITIONS[p.position] || '（守備）'}、${p.name || '（名前）'}くん、\n`;
+                        text += `${gameProgress.currentBatterIndex + 1}番から...`;
+                    }
+                    
+                    // 守備側のアナウンス（交代があった場合など）
+                    if (!isOurAttack) {
+                        text += `\n\n${myTeam}の守備をお知らせします。\n`;
+                         roster.starting.forEach(p => {
+                            if (p.position && p.position !== 'DH' && p.name) {
+                                text += `${POSITIONS[p.position]}、${p.name}くん、\n`;
                             }
                         });
-                        text = text.slice(0, -2) + "。\n"; // 最後の「、\n」を「。」に
-                        text += `${opponent || '（相手チーム）'}の攻撃は、${gameProgress.currentBatterIndex + 1}番から...`;
+                        text = text.slice(0, -2) + "。"; // 最後の「、\n」を「。」に
+                    } else {
+                        text += `\n\n${oppTeam}の守備は...`;
                     }
                     break;
 
                 case "batterUp":
-                    const batter = roster.starting[gameProgress.currentBatterIndex];
-                    if (batter && batter.name) {
-                        text = `${batter.order}番、${POSITIONS[batter.position] || '（守備）'}、${batter.name || '（名前）'}くん。`;
+                    const currentBatter = roster.starting[gameProgress.currentBatterIndex];
+                    if (currentBatter && currentBatter.name) {
+                        text = `${currentBatter.order}番、${currentBatter.name || '（名前）'}くん、背番号 ${currentBatter.number || '？'}番。`;
                     } else {
                         text = "（打者情報がありません）";
                     }
@@ -695,21 +837,38 @@
                         text = "（まだ選手交代はありません）";
                         break;
                     }
-                    // 直近の交代情報をアナウンス
                     const lastSub = gameState.substitutionHistory[gameState.substitutionHistory.length - 1];
-                    text = "選手交代をお知らせします。\n";
+                    text = `${myTeam}、${lastSub.announceType}をお知らせします。\n`;
                     text += lastSub.text;
+                    break;
+                
+                case "gameEnd":
+                    text = `本日の試合は、\n`;
+                    text += `（スコア入力欄） 対 （スコア入力欄） をもちまして、\n`;
+                    text += `（勝利チーム）の勝ちとなりました。\n`;
+                    text += `（整列・礼）`;
+                    break;
+                
+                case "sheetKnockPre": // 自チームが先攻の時 = 相手(後攻)のノック
+                    text = `後攻、${oppTeam}のシートノックを行います。\n`;
+                    text += `時間は7分間です。\n`; //時間は仮で7分
+                    break;
+                
+                case "sheetKnockPost": // 自チームが後攻の時 = 相手(先攻)のノック
+                    text = `先攻、${oppTeam}のシートノックを行います。\n`;
+                    text += `時間は7分間です。\n`; //時間は仮で7分
                     break;
                     
                 default:
                     text = `「${type}」のアナウンスは準備中です。`;
-            }
+                    break; // ★修正: default に break を追加
+            } // ★修正: switch 文を閉じる } を追加
 
             output.textContent = text;
             output.scrollTop = 0; // スクロールを一番上に戻す
         }
 
-        // --- 選手交代ロジック ---
+        // --- 選手交代ロジック (アナウンス修正) ---
 
         // シンプル交代
         async function handleSimpleSubstitution() {
@@ -718,90 +877,91 @@
             const newPosition = document.getElementById('subPosition').value;
 
             if (!inPlayerId || !newPosition) {
-                await customConfirm("出場選手と守備位置を選択してください。", "入力エラー");
+                await customConfirm("出場選手(IN)と守備位置を選択してください。", "入力エラー");
                 return;
             }
 
             const inPlayer = gameState.roster.bench.find(p => p.id === inPlayerId);
-            if (!inPlayer) {
-                await customConfirm("出場選手が見つかりません。", "エラー");
+            if (!inPlayer || !inPlayer.name) {
+                await customConfirm("出場選手(IN)が見つかりません。", "エラー");
                 return;
             }
             
             let outPlayer = null;
-            let outPlayerOriginalPosition = null;
             let announceText = "";
+            let announceType = "選手の交代"; // "選手の交代" or "守備位置の交代"
 
-            if (outPlayerId) {
-                // スタメンから探す
-                outPlayer = gameState.roster.starting.find(p => p.id === outPlayerId);
-                if (outPlayer) {
-                    outPlayerOriginalPosition = outPlayer.position;
-                    // TODO: 交代した選手をベンチに戻す処理。
-                    // ここでは、スタメンリストからIN選手に置き換える（打順は引き継ぐ）
-                    const outPlayerIndex = gameState.roster.starting.findIndex(p => p.id === outPlayerId);
-                    if (outPlayerIndex > -1) {
-                        
-                        // 代打・代走の場合
-                        if (newPosition === 'PH' || newPosition === 'PR') {
-                             announceText = `【${newPosition === 'PH' ? '代打' : '代走'}】\n`;
-                             announceText += `${outPlayer.order}番、${outPlayer.name}くんに代わりまして、${inPlayer.name}くん、背番号 ${inPlayer.number}番。`;
-                             // 打順リストを更新
-                             const oldPlayer = {...outPlayer};
-                             gameState.roster.starting[outPlayerIndex] = {
-                                 ...inPlayer,
-                                 order: oldPlayer.order,
-                                 position: newPosition // 代打/代走
-                             };
-                             // ベンチから削除
-                             gameState.roster.bench = gameState.roster.bench.filter(p => p.id !== inPlayerId);
-                             // 元の選手をベンチに追加
-                             gameState.roster.bench.push({ id: oldPlayer.id, name: oldPlayer.name, number: oldPlayer.number });
-                        }
-                        // 守備交代の場合
-                        else if (newPosition !== 'BENCH') {
-                            announceText = `【守備交代】\n`;
-                            announceText += `${POSITIONS[outPlayerOriginalPosition]}の${outPlayer.name}くんに代わりまして、\n`;
-                            announceText += `${inPlayer.name}くんが、${POSITIONS[newPosition]}に入ります。\n`;
-                            announceText += `背番号は ${inPlayer.number}番。`;
-                            
-                            // 打順リストを更新
-                             const oldPlayer = {...outPlayer};
-                             gameState.roster.starting[outPlayerIndex] = {
-                                 ...inPlayer,
-                                 order: oldPlayer.order,
-                                 position: newPosition
-                             };
-                             // ベンチから削除
-                             gameState.roster.bench = gameState.roster.bench.filter(p => p.id !== inPlayerId);
-                             // 元の選手をベンチに追加
-                             gameState.roster.bench.push({ id: oldPlayer.id, name: oldPlayer.name, number: oldPlayer.number });
+            // --- 交代パターン分岐 ---
 
-                        } else {
-                            // TODO: ベンチに戻る処理
-                        }
-                    }
+            // 1. 代打・代走 (OUT選手が必須)
+            if (newPosition === 'PH' || newPosition === 'PR') {
+                if (!outPlayerId) {
+                    await customConfirm("交代する選手(OUT)を選択してください。", "入力エラー");
+                    return;
                 }
-            } else {
-                // OUTがいない場合（守備位置につくだけ？）
-                // TODO: 仕様確認。ひとまずはOUT/IN必須とする。
-                await customConfirm("交代する選手(OUT)も選択してください。", "入力エラー");
-                return;
+                outPlayer = gameState.roster.starting.find(p => p.id === outPlayerId);
+                if (!outPlayer) {
+                    await customConfirm("交代する選手(OUT)が見つかりません。", "エラー");
+                    return;
+                }
+                
+                const subType = newPosition === 'PH' ? '代打' : '代走';
+                announceText = `${outPlayer.order}番、${outPlayer.name}くんに代わりまして、${subType}、${inPlayer.name}くん。背番号 ${inPlayer.number}番。`;
+                
+                // 実行
+                const outPlayerIndex = gameState.roster.starting.findIndex(p => p.id === outPlayerId);
+                if (outPlayerIndex > -1) {
+                    const oldPlayer = {...outPlayer};
+                    gameState.roster.starting[outPlayerIndex] = { ...inPlayer, order: oldPlayer.order, position: newPosition };
+                    gameState.roster.bench = gameState.roster.bench.filter(p => p.id !== inPlayerId);
+                    gameState.roster.bench.push({ id: oldPlayer.id, name: oldPlayer.name, number: oldPlayer.number });
+                }
             }
+            
+            // 2. 守備交代 (OUT選手あり)
+            else if (outPlayerId && newPosition !== 'BENCH') {
+                outPlayer = gameState.roster.starting.find(p => p.id === outPlayerId);
+                if (!outPlayer) {
+                     await customConfirm("交代する選手(OUT)が見つかりません。", "エラー");
+                     return;
+                }
+                
+                announceText = `${POSITIONS[outPlayer.position]}、${outPlayer.name}くんに代わりまして、${inPlayer.name}くんが、${POSITIONS[newPosition]}に入ります。\n`;
+                announceText += `${outPlayer.order}番、${inPlayer.name}くん、背番号 ${inPlayer.number}番。`;
+                
+                // 実行
+                const outPlayerIndex = gameState.roster.starting.findIndex(p => p.id === outPlayerId);
+                 if (outPlayerIndex > -1) {
+                    const oldPlayer = {...outPlayer};
+                    gameState.roster.starting[outPlayerIndex] = { ...inPlayer, order: oldPlayer.order, position: newPosition };
+                    gameState.roster.bench = gameState.roster.bench.filter(p => p.id !== inPlayerId);
+                    gameState.roster.bench.push({ id: oldPlayer.id, name: oldPlayer.name, number: oldPlayer.number });
+                 }
+            }
+            
+            // 3. 守備交代 (OUT選手なし = ベンチから入るだけ。例: 代打がそのまま守備につく)
+            // TODO: このUIでは「OUT選手なし」は実装が難しい。「代打の〇〇くんに代わりまして...」のパターンが必要
+            else if (!outPlayerId) {
+                 await customConfirm("このUIでは、交代する選手(OUT)も選択してください。\n（代打→守備の場合は、代打(PH)の選手をOUTに、新しい守備位置を選択してください）", "入力エラー");
+                 return;
+            }
+            
+            // 4. ベンチに戻る
+            else if (newPosition === 'BENCH') {
+                 // TODO
+                 await customConfirm("「ベンチへ」の処理は未実装です。", "情報");
+                 return;
+            }
+
 
             // 交代履歴に追加
             gameState.substitutionHistory.push({
                 type: 'simple',
-                outId: outPlayerId,
-                inId: inPlayerId,
-                position: newPosition,
+                announceType: announceType,
                 text: announceText
             });
 
-            // UI更新
             renderUI();
-            
-            // アナウンス生成
             generateAnnouncement("substitution");
 
             // フォームリセット
@@ -810,80 +970,88 @@
             document.getElementById('subPosition').value = "";
         }
 
-        // 一括守備交代
+        // 一括守備交代 (ロジック改善)
         async function handleMultiSubstitution() {
-            const input = document.getElementById('multiSubInput').value;
+            const input = document.getElementById('multiSubInput').value.trim();
             const messageEl = document.getElementById('multiSubMessage');
             messageEl.textContent = "";
 
-            // 入力例: "4-6, 6-4" (セカンドとショートの入れ替え)
-            // 入力例: "4-3-1" (玉突き: 4->3, 3->1, 1->?)
+            if (!input) {
+                messageEl.textContent = "変更内容を入力してください。";
+                return;
+            }
+
+            let announceText = "";
+            const announceType = "守備位置の交代";
             
-            const changes = input.split(',').map(s => s.trim());
-            let announceText = "【守備位置の変更】\n";
-            let success = true;
+            const playerMap = new Map(); // 現在の守備位置 -> 選手 のマップ
+            gameState.roster.starting.forEach(p => {
+                if (p.position && p.position !== 'DH' && p.position !== 'PH' && p.position !== 'PR') {
+                    playerMap.set(p.position, p);
+                }
+            });
 
+            const newPositionMap = new Map(); // 選手ID -> 新しい守備位置 のマップ
+            
             try {
-                // 玉突き形式 (例: 4-3-1-2)
-                if (changes.length === 1 && changes[0].includes('-')) {
-                    const positions = changes[0].split('-').map(p => p.trim());
-                    if(positions.length < 2) throw new Error("最低2つの守備位置が必要です。");
-                    
-                    const playersToMove = [];
-                    // まず、移動元となる選手を特定
-                    for (let i = 0; i < positions.length - 1; i++) {
-                        const fromPos = positions[i];
-                        const player = gameState.roster.starting.find(p => p.position === fromPos);
-                        if (!player) throw new Error(`${fromPos} (${POSITIONS[fromPos]}) に選手がいません。`);
-                        playersToMove.push({ player, toPos: positions[i+1] });
-                    }
-                    
-                    // 最後の選手 (例: 4-3-1 の 1) の行き先は？
-                    // 仕様では不明瞭なため、最後の選手 (1) はベンチに戻ると仮定
-                    const lastPos = positions[positions.length - 1];
-                    const lastPlayer = gameState.roster.starting.find(p => p.position === lastPos);
-                    if (lastPlayer) {
-                         playersToMove.push({ player: lastPlayer, toPos: 'BENCH' }); // 仮にベンチへ
-                    }
-
-                    // 変更を適用
-                    playersToMove.forEach(({ player, toPos }) => {
-                        const originalPos = player.position;
-                        player.position = toPos;
-                        
-                        if(toPos === 'BENCH') {
-                            announceText += `${POSITIONS[originalPos]}の${player.name}くんが、ベンチに下がります。\n`;
-                            // TODO: ベンチへの移動ロジック (スタメンから削除、ベンチに追加)
-                        } else {
-                            announceText += `${POSITIONS[originalPos]}の${player.name}くんが、${POSITIONS[toPos]}に入ります。\n`;
-                        }
-                    });
-
-                } 
-                // 交換形式 (例: 4-6, 6-4)
-                else {
-                    changes.forEach(change => {
+                // "4-6, 6-4" のような交換形式
+                if (input.includes(',')) {
+                    const changes = input.split(',').map(s => s.trim());
+                    for (const change of changes) {
                         const parts = change.split('-');
                         if (parts.length !== 2) throw new Error(`書式が不正です: "${change}"`);
-                        
                         const fromPos = parts[0].trim();
                         const toPos = parts[1].trim();
                         
-                        const player = gameState.roster.starting.find(p => p.position === fromPos);
-                        if (!player) throw new Error(`${fromPos} (${POSITIONS[fromPos]}) に選手がいません。`);
+                        if (!playerMap.has(fromPos)) throw new Error(`${POSITIONS[fromPos]}に選手がいません。`);
+                        const player = playerMap.get(fromPos);
                         
-                        // TODO: 既に行き先に選手がいる場合の処理 (例: 4-6, 6-4)
-                        // このロジックだと 4->6 にした後、6(元4) -> 4 になってしまう
-                        // -> 段階的ではなく、一括で処理する必要がある
-                        
-                        // 仮実装: 単純な移動のみ
-                        player.position = toPos;
+                        newPositionMap.set(player.id, toPos);
                         announceText += `${POSITIONS[fromPos]}の${player.name}くんが、${POSITIONS[toPos]}に入ります。\n`;
-                    });
+                    }
                 }
+                // "4-3-1" のような玉突き形式
+                else if (input.includes('-')) {
+                    const positions = input.split('-').map(p => p.trim());
+                    if (positions.length < 2) throw new Error("玉突きは最低2つの守備位置が必要です。");
+                    
+                    for (let i = 0; i < positions.length - 1; i++) {
+                        const fromPos = positions[i];
+                        const toPos = positions[i+1];
+                        if (!playerMap.has(fromPos)) throw new Error(`${POSITIONS[fromPos]}に選手がいません。`);
+                        const player = playerMap.get(fromPos);
+                        
+                        newPositionMap.set(player.id, toPos);
+                        announceText += `${POSITIONS[fromPos]}の${player.name}くんが、${POSITIONS[toPos]}に入ります。\n`;
+                    }
+                    
+                    // 最後の選手 (例: 4-3-1 の 1) はベンチへ
+                    const lastPos = positions[positions.length - 1];
+                    if (playerMap.has(lastPos)) {
+                        const lastPlayer = playerMap.get(lastPos);
+                        newPositionMap.set(lastPlayer.id, "BENCH");
+                        announceText += `${POSITIONS[lastPos]}の${lastPlayer.name}くんが、ベンチに下がります。\n`;
+                    }
+                } else {
+                    throw new Error("書式が不正です。例: '4-6, 6-4' または '4-3-1'");
+                }
+
+                // 実際のデータに反映
+                gameState.roster.starting.forEach(player => {
+                    if (newPositionMap.has(player.id)) {
+                        const newPos = newPositionMap.get(player.id);
+                        player.position = newPos;
+                        
+                        // TODO: ベンチに移動する処理 (スタメンから削除し、ベンチ配列に追加)
+                        if (newPos === 'BENCH') {
+                            // 今はスタメンリストに残ったまま守備位置が "BENCH" になるだけ
+                        }
+                    }
+                });
                 
                 gameState.substitutionHistory.push({
                     type: 'multi',
+                    announceType: announceType,
                     text: announceText
                 });
 
@@ -893,7 +1061,7 @@
 
             } catch(e) {
                 messageEl.textContent = `エラー: ${e.message}`;
-                success = false;
+                console.error("一括交代エラー: ", e);
             }
         }
 
@@ -906,23 +1074,7 @@
             // localStorageから読み込み試行
             const savedData = localStorage.getItem(STORAGE_KEY);
             if (savedData) {
-                try {
-                    const parsedData = JSON.parse(savedData);
-                    // 保存されたデータをデフォルトにマージ
-                    gameState = {
-                        ...gameState,
-                        ...parsedData,
-                        gameInfo: { ...gameState.gameInfo, ...(parsedData.gameInfo || {}) },
-                        roster: { ...gameState.roster, ...(parsedData.roster || {}) },
-                        gameProgress: { ...gameState.gameProgress, ...(parsedData.gameProgress || {}) },
-                    };
-                    statusEl.textContent = "前回保存したデータを自動的に読み込みました。";
-                    statusEl.className = 'text-sm text-blue-600 mt-2';
-                } catch (e) {
-                    console.error("自動読込失敗: ", e);
-                    statusEl.textContent = "保存データの自動読込に失敗しました。";
-                    statusEl.className = 'text-sm text-red-600 mt-2';
-                }
+                loadState(savedData, statusEl, "前回保存したデータを自動的に読み込みました。");
             } else {
                  statusEl.textContent = "データはまだ保存されていません。";
                  statusEl.className = 'text-sm text-gray-500 mt-2';
@@ -930,6 +1082,9 @@
 
             // UIを描画
             renderUI();
+            
+            // シートノックボタンの初期状態を設定
+            updateSheetKnockButtons(gameState.gameInfo.playOrder);
         }
 
         // 初期化実行
