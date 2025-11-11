@@ -66,9 +66,9 @@
         .btn-load {
             @apply bg-yellow-600 text-white hover:bg-yellow-700;
         }
-        /* アナウンス出力エリア (UIをクリーンに変更) */
+        /* アナウンス出力エリア (画面下部フルワイド) */
         .announcement-box {
-            @apply mt-4 p-4 bg-white border border-gray-300 rounded-lg shadow-lg;
+            @apply p-4 bg-white border-t border-gray-300 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)];
         }
         .announcement-box h4 {
             @apply text-lg font-semibold text-gray-800 mb-2;
@@ -108,8 +108,8 @@
         </button>
     </nav>
 
-    <!-- メインコンテンツ -->
-    <main class="container mx-auto p-4">
+    <!-- メインコンテンツ (pb-64 を追加) -->
+    <main class="container mx-auto p-4 pb-64">
 
         <!-- 1. 選手マスタ管理タブ -->
         <div x-show="activeTab === 'master'" class="form-section">
@@ -461,214 +461,7 @@
 
             </div>
 
-            <!-- 3-2. 選手交代サブタブ (アコーディオン化) -->
-            <div x-show="announcementTab === 'change'" class="space-y-4" x-data="{ openChange: 'position' }">
-
-                <!-- 守備位置の交代 -->
-                <div>
-                    <button @click="openChange = (openChange === 'position' ? '' : 'position')" class="w-full text-left form-section section-header" :class="{'rounded-lg': openChange !== 'position'}">
-                        <span>守備位置の交代</span>
-                        <span x-text="openChange === 'position' ? '閉じる' : '開く'" class="text-sm font-medium text-blue-600"></span>
-                    </button>
-                    <div x-show="openChange === 'position'" x-transition class="section-content">
-                        <div class="flex gap-4">
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-700">交代 (例: 4-1-5-2)</label>
-                                <input type="text" x-model="changeForms.positionChange" placeholder="例: 4-1 / 4-1-5-2">
-                            </div>
-                            <button @click="generateAnnouncement('positionChange')" class="btn btn-secondary self-end h-11">
-                                生成
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 選手の交代 -->
-                <div>
-                    <button @click="openChange = (openChange === 'player' ? '' : 'player')" class="w-full text-left form-section section-header" :class="{'rounded-lg': openChange !== 'player'}">
-                        <span>選手の交代</span>
-                        <span x-text="openChange === 'player' ? '閉じる' : '開く'" class="text-sm font-medium text-blue-600"></span>
-                    </button>
-                    <div x-show="openChange === 'player'" x-transition class="section-content">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">交代する選手 (OUT)</label>
-                                <select x-model="changeForms.playerChange.outPlayerId">
-                                    <option value="">スタメンから選択</option>
-                                    <template x-for="p in currentStartingMembers">
-                                        <option :value="p.id" x-text="p.number + '. ' + p.name + ' (' + p.positionName + ')'"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">入る選手 (IN)</label>
-                                <select x-model="changeForms.playerChange.inPlayerId">
-                                    <option value="">控えから選択</option>
-                                    <template x-for="p in currentBenchPlayers">
-                                        <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <button @click="generateAnnouncement('playerChange')" class="btn btn-secondary h-11">
-                                生成
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 代打 -->
-                <div>
-                    <button @click="openChange = (openChange === 'ph' ? '' : 'ph')" class="w-full text-left form-section section-header" :class="{'rounded-lg': openChange !== 'ph'}">
-                        <span>代打 (Pinch Hitter)</span>
-                        <span x-text="openChange === 'ph' ? '閉じる' : '開く'" class="text-sm font-medium text-blue-600"></span>
-                    </button>
-                    <div x-show="openChange === 'ph'" x-transition class="section-content">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">交代する選手 (OUT)</label>
-                                <select x-model="changeForms.pinchHitter.outPlayerId">
-                                    <option value="">スタメンから選択</option>
-                                    <template x-for="p in currentStartingMembers">
-                                        <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">入る選手 (IN)</label>
-                                <select x-model="changeForms.pinchHitter.inPlayerId">
-                                    <option value="">控えから選択</option>
-                                    <template x-for="p in currentBenchPlayers">
-                                        <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <button @click="generateAnnouncement('pinchHitter')" class="btn btn-secondary h-11">
-                                生成
-                            </button>
-                        </div>
-                        <!-- 代打のその後 -->
-                        <div class="mt-6 border-t pt-6 space-y-4">
-                            <p class="text-sm text-gray-600">攻撃終了後、代打の選手のその後を選択してください。</p>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">守備位置</label>
-                                    <select x-model="changeForms.pinchHitter.newPositionId">
-                                        <option value="">守備位置を選択</option>
-                                        <template x-for="pos in positions">
-                                            <option :value="pos.id" x-text="pos.id + '. ' + pos.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <button @click="generateAnnouncement('pinchHitterDefense')" class="btn btn-secondary h-11">
-                                    ① そのまま守備につく
-                                </button>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                <div class="md:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700">交代する選手 (IN)</label>
-                                    <select x-model="changeForms.pinchHitter.subInPlayerId">
-                                        <option value="">控えから選択</option>
-                                        <template x-for="p in currentBenchPlayers">
-                                            <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <button @click="generateAnnouncement('pinchHitterSub')" class="btn btn-secondary h-11">
-                                    ② さらに交代する
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 代走 -->
-                <div>
-                    <button @click="openChange = (openChange === 'pr' ? '' : 'pr')" class="w-full text-left form-section section-header" :class="{'rounded-lg': openChange !== 'pr'}">
-                        <span>代走 (Pinch Runner)</span>
-                        <span x-text="openChange === 'pr' ? '閉じる' : '開く'" class="text-sm font-medium text-blue-600"></span>
-                    </button>
-                    <div x-show="openChange === 'pr'" x-transition class="section-content">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">交代する選手 (OUT)</label>
-                                <select x-model="changeForms.pinchRunner.outPlayerId">
-                                    <option value="">スタメンから選択</option>
-                                    <template x-for="p in currentStartingMembers">
-                                        <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">入る選手 (IN)</label>
-                                <select x-model="changeForms.pinchRunner.inPlayerId">
-                                    <option value="">控えから選択</option>
-                                    <template x-for="p in currentBenchPlayers">
-                                        <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">塁</label>
-                                <select x-model="changeForms.pinchRunner.base">
-                                    <option value="一">一塁</option>
-                                    <option value="二">二塁</option>
-                                    <option value="三">三塁</option>
-                                </select>
-                            </div>
-                            <button @click="generateAnnouncement('pinchRunner')" class="btn btn-secondary h-11 md:col-span-3">
-                                生成
-                            </button>
-                        </div>
-                        <!-- 代走のその後 (代打と共通) -->
-                        <div class="mt-6 border-t pt-6 space-y-4">
-                            <p class="text-sm text-gray-600">攻撃終了後、代走の選手のその後を選択してください。</p>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">守備位置</label>
-                                    <select x-model="changeForms.pinchRunner.newPositionId">
-                                        <option value="">守備位置を選択</option>
-                                        <template x-for="pos in positions">
-                                            <option :value="pos.id" x-text="pos.id + '. ' + pos.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <button @click="generateAnnouncement('pinchRunnerDefense')" class="btn btn-secondary h-11">
-                                    ① そのまま守備につく
-                                </button>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                <div class="md:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700">交代する選手 (IN)</label>
-                                    <select x-model="changeForms.pinchRunner.subInPlayerId">
-                                        <option value="">控えから選択</option>
-                                        <template x-for="p in currentBenchPlayers">
-                                            <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <button @click="generateAnnouncement('pinchRunnerSub')" class="btn btn-secondary h-11">
-                                    ② さらに交代する
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- 全タブ共通：アナウンス出力エリア -->
-            <div x-show="announcement" x-transition class="announcement-box sticky bottom-4 z-20">
-                <h4>生成されたアナウンス</h4>
-                <textarea x-model="announcement" rows="8" class="font-mono leading-relaxed"></textarea>
-                <div class="flex justify-end gap-3 mt-2">
-                    <button @click="copyToClipboard(announcement)" class="btn btn-success btn-sm px-3 py-1 text-sm">
-                        クリップボードにコピー
-                    </button>
-                    <button @click="announcement = ''" class="btn btn-secondary btn-sm px-3 py-1 text-sm">
-                        クリア
-                    </button>
-                </div>
-            </div>
+            <!-- 全タブ共通：アナウンス出力エリア (ここから削除) -->
 
         </div>
 
@@ -677,6 +470,35 @@
     <footer class="text-center py-4 mt-8 text-gray-500 text-sm">
         <p>&copy; 2024 Baseball Announcement App</p>
     </footer>
+
+    <!-- 全タブ共通：アナウンス出力エリア (メインの外に移動し、画面下部に固定) -->
+    <div x-show="announcement" 
+         class="announcement-box fixed bottom-0 left-0 right-0 z-30"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="transform translate-y-full"
+         x-transition:enter-end="transform translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="transform translate-y-0"
+         x-transition:leave-end="transform translate-y-full">
+        
+        <!-- コンテンツ幅をコンテナに合わせる -->
+        <div class="container mx-auto px-4"> 
+            <div class="flex justify-between items-center mb-2">
+                <h4 class="text-lg font-semibold text-gray-800">生成されたアナウンス</h4>
+                <!-- 「クリア」を「閉じる」に変更 -->
+                <button @click="announcement = ''" class="btn btn-secondary btn-sm px-3 py-1 text-sm">
+                    閉じる
+                </button>
+            </div>
+            <textarea x-model="announcement" rows="6" class="font-mono leading-relaxed"></textarea>
+            <div class="flex justify-end gap-3 mt-2">
+                <button @click="copyToClipboard(announcement)" class="btn btn-success btn-sm px-3 py-1 text-sm">
+                    クリップボードにコピー
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Alpine.js データとロジック (変更なし) -->
     <script>
