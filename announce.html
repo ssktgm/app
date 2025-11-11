@@ -125,6 +125,26 @@
                 <!-- 2. メンバー登録 -->
                 <section id="roster" class="bg-white rounded-lg shadow p-6">
                     <h2 class="text-xl font-bold mb-4 border-b pb-2">2. メンバー登録 (自チーム)</h2>
+
+                    <!-- スタッフ -->
+                    <h3 class="text-lg font-semibold mb-3">スタッフ (メンバー発表用)</h3>
+                    <div id="staffMembers" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                        <div>
+                            <label for="staffManager" class="block text-sm font-medium text-gray-700 mb-1">監督 (背番号)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="staffManager" data-field="manager" placeholder="氏名" class="w-2/3 border-gray-300 rounded-lg shadow-sm text-sm p-2">
+                                <input type="text" id="staffManagerNum" data-field="managerNum" placeholder="30" class="w-1/3 border-gray-300 rounded-lg shadow-sm text-sm p-2">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="staffCoach" class="block text-sm font-medium text-gray-700 mb-1">コーチ</label>
+                            <input type="text" id="staffCoach" data-field="coach" placeholder="氏名" class="w-full border-gray-300 rounded-lg shadow-sm text-sm p-2">
+                        </div>
+                        <div>
+                            <label for="staffMg" class="block text-sm font-medium text-gray-700 mb-1">マネージャー</label>
+                            <input type="text" id="staffMg" data-field="managerial" placeholder="氏名" class="w-full border-gray-300 rounded-lg shadow-sm text-sm p-2">
+                        </div>
+                    </div>
                     
                     <!-- スタメン -->
                     <h3 class="text-lg font-semibold mb-3">スターティングメンバー</h3>
@@ -244,24 +264,25 @@
                     <!-- アナウンス種類ボタン -->
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                         <!-- 試合開始前 -->
-                        <h3 class="col-span-full text-md font-semibold mt-2 border-b">試合開始前</h3>
-                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="preGame">① 試合開始前</button>
-                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockPost" id="btnSheetKnockPost">② 相手ノック(後)</button>
-                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockPre" id="btnSheetKnockPre">③ 相手ノック(先)</button>
-                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="startMember">④⑤ メンバー表</button>
-                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockMyTeamPre" id="btnSheetKnockMyTeamPre">⑥ 自チームノック(先)</button>
-                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockMyTeamPost" id="btnSheetKnockMyTeamPost">⑥ 自チームノック(後)</button>
-                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="playersMeeting">⑦ 選手集合</button>
-                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="umpireIntro">審判紹介</button>
+                    <h2 class="text-xl font-bold mb-4 border-b pb-2">5. アナウンス フロー (連盟資料準拠)</h2>
+                    
+                    <!-- アナウンス種類ボタン -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                        <!-- 試合開始前 -->
+                        <h3 class="col-span-full text-md font-semibold mt-2 border-b">試合開始前 (PDF (1)～(5))</h3>
+                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="preGame">① 試合前挨拶</button>
+                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg" data-type="sheetKnockPost">② 後攻チーム ノック</button>
+                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg" data-type="sheetKnockPre">③ 先攻チーム ノック</button>
+                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="startMemberPre">④ 先攻メンバー紹介</button>
+                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="startMemberPost">⑤ 後攻メンバー+審判</button>
+                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="gameStart">⑥ 試合開始挨拶</button>
 
                         <!-- 試合中 -->
-                        <h3 class="col-span-full text-md font-semibold mt-2 border-b">試合中</h3>
-                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="inningStart">⑧⑨⑩ イニング開始</button>
-                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="batterUp">打者紹介</button>
-                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="inningEndAttack">⑪ イニング終了(攻撃)</button>
-                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="inningEndDefense">⑫ イニング終了(守備)</button>
-                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="gameStartTime">⑬ 試合開始時刻</button>
-                        <button class="announce-btn bg-red-100 hover:bg-red-200 text-red-800 py-2 px-3 rounded-lg" data-type="gameEnd">⑭ 試合終了</button>
+                        <h3 class="col-span-full text-md font-semibold mt-2 border-b">試合中 (PDF (6)～(10))</h3>
+                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="inningStart">⑦ イニング開始</button>
+                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="batterUp">⑧ 打者紹介</button>
+                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="inningEndAttack">⑨ イニング終了(得点)</button>
+                        <button class="announce-btn bg-red-100 hover:bg-red-200 text-red-800 py-2 px-3 rounded-lg" data-type="gameEnd">⑩ 試合終了</button>
 
                         <!-- 交代 -->
                         <h3 class="col-span-full text-md font-semibold mt-2 border-b">選手交代 (履歴読上)</h3>
@@ -327,6 +348,7 @@
                     umpires: { pl: "", "1b": "", "2b": "", "3b": "" }
                 },
                 roster: {
+                    staff: { manager: "", managerNum: "", coach: "", managerial: "" }, // スタッフ情報を追加
                     starting: Array(9).fill(null).map((_, i) => ({ id: `s${i}`, order: i + 1, name: "", number: "", position: "" })),
                     bench: [{ id: `b0`, name: "", number: "" }]
                 },
@@ -380,7 +402,14 @@
             document.getElementById('umpire2B').value = info.umpires["2b"] || "";
             document.getElementById('umpire3B').value = info.umpires["3b"] || "";
 
-            // 2. メンバー登録
+            // 2. メンバー登録 (スタッフ)
+            const staff = gameState.roster.staff;
+            document.getElementById('staffManager').value = staff.manager || "";
+            document.getElementById('staffManagerNum').value = staff.managerNum || "";
+            document.getElementById('staffCoach').value = staff.coach || "";
+            document.getElementById('staffMg').value = staff.managerial || "";
+            
+            // 2. メンバー登録 (選手)
             renderStartingMembers();
             renderBenchMembers();
 
@@ -506,8 +535,17 @@
                 gameState.gameInfo.playOrder = value;
                 // 先攻/後攻が変わったら打者表示も更新
                 updateCurrentBatterDisplay();
-                // シートノックボタンの有効/無効を切り替え
-                updateSheetKnockButtons(value);
+                // シートノックボタンの制御は廃止
+                // updateSheetKnockButtons(value); 
+            }
+        });
+
+        // 2. メンバー登録入力 (スタッフ)
+        document.getElementById('staffMembers').addEventListener('input', (e) => {
+            const input = e.target;
+            const field = input.dataset.field;
+            if (field in gameState.roster.staff) {
+                gameState.roster.staff[field] = input.value;
             }
         });
 
@@ -712,33 +750,12 @@
             }
         }
 
-        // シートノックボタンの有効/無効を切り替え
+        // シートノックボタンの有効/無効を切り替え (廃止)
+        /*
         function updateSheetKnockButtons(playOrder) {
-            const btnPre = document.getElementById('btnSheetKnockPre');
-            const btnPost = document.getElementById('btnSheetKnockPost');
-            const btnMyTeamPre = document.getElementById('btnSheetKnockMyTeamPre');
-            const btnMyTeamPost = document.getElementById('btnSheetKnockMyTeamPost');
-            if (!btnPre || !btnPost || !btnMyTeamPre || !btnMyTeamPost) return;
-
-            const buttons = [
-                { el: btnPre,          active: playOrder === 'first',  type: 'pre' },
-                { el: btnPost,         active: playOrder === 'second', type: 'post' },
-                { el: btnMyTeamPre,    active: playOrder === 'first',  type: 'myTeamPre' },
-                { el: btnMyTeamPost,   active: playOrder === 'second', type: 'myTeamPost' },
-            ];
-
-            buttons.forEach(btn => {
-                if (btn.active) {
-                    btn.el.disabled = false;
-                    btn.el.classList.remove('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
-                    btn.el.classList.add('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
-                } else {
-                    btn.el.disabled = true;
-                    btn.el.classList.add('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
-                    btn.el.classList.remove('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
-                }
-            });
+            // ... (この関数は不要になった)
         }
+        */
 
 
         // --- アナウンス生成ロジック (画像ベースに修正) ---
@@ -751,24 +768,29 @@
             const myTeam = myTeamName || '（自チーム）';
             const oppTeam = opponent || '（相手チーム）';
             let text = "";
+            
+            const firstTeam = playOrder === 'first' ? myTeam : oppTeam;
+            const secondTeam = playOrder === 'first' ? oppTeam : myTeam;
+            const staff = roster.staff; // スタッフ情報を取得
 
             switch(type) {
-                case "preGame":
+                case "preGame": // ① 試合前挨拶
                     text = `皆様、本日はご来場いただき、誠にありがとうございます。\n`;
-                    text += `ただいまより、本日の試合、${title || '（大会名）'}、\n`;
-                    text += `${myTeam} 対 ${oppTeam} の試合を行います。\n`;
-                    text += `試合に先立ちまして、両チームのスターティングメンバー、並びに審判員をお知らせいたします。\n`;
+                    text += `本日の試合は、${title || '（大会名）'}、\n`;
+                    text += `${firstTeam} 対 ${secondTeam} の試合を行います。\n`;
+                    text += `なお、試合開始前にメンバー表の交換が行われました。\n`;
                     break;
 
-                case "startMember":
-                    const firstTeam = playOrder === 'first' ? myTeam : oppTeam;
-                    const secondTeam = playOrder === 'first' ? oppTeam : myTeam;
-                    
+                case "startMemberPre": // ④ 先攻メンバー紹介 (PDF(3)準拠)
                     text = `【先攻：${firstTeam}】\n`;
                     if (playOrder === 'first') {
                         roster.starting.forEach(p => {
                             text += `${p.order}番、${POSITIONS[p.position] || '（守備）'}、${p.name || '（名前）'}くん、背番号 ${p.number || '？'}番。\n`;
                         });
+                        text += `監督、${staff.manager || '（監督）'}くん、背番号 ${staff.managerNum || '？'}番。\n`;
+                        if (staff.coach) text += `コーチ、${staff.coach}くん。\n`;
+                        if (staff.managerial) text += `マネージャー、${staff.managerial}さん。\n`;
+                        
                         text += `控え選手は、\n`;
                         roster.bench.filter(p => p.name).forEach(p => {
                              text += `${p.name}くん、背番号 ${p.number || '？'}番、\n`;
@@ -780,14 +802,20 @@
                         }
                     } else {
                         text += `（相手チームのスタメン...）\n`;
-                        text += `（相手チームの控え選手...）\n`;
+                        text += `（相手チームの監督・コーチ・控え選手...）\n`;
                     }
-                    
-                    text += `\n【後攻：${secondTeam}】\n`;
+                    break;
+
+                case "startMemberPost": // ⑤ 後攻メンバー紹介 + 審判 (PDF(3),(4)準拠)
+                    text = `【後攻：${secondTeam}】\n`;
                     if (playOrder === 'second') {
                          roster.starting.forEach(p => {
                             text += `${p.order}番、${POSITIONS[p.position] || '（守備）'}、${p.name || '（名前）'}くん、背番号 ${p.number || '？'}番。\n`;
                         });
+                        text += `監督、${staff.manager || '（監督）'}くん、背番号 ${staff.managerNum || '？'}番。\n`;
+                        if (staff.coach) text += `コーチ、${staff.coach}くん。\n`;
+                        if (staff.managerial) text += `マネージャー、${staff.managerial}さん。\n`;
+
                         text += `控え選手は、\n`;
                         roster.bench.filter(p => p.name).forEach(p => {
                              text += `${p.name}くん、背番号 ${p.number || '？'}番、\n`;
@@ -799,13 +827,11 @@
                         }
                     } else {
                         text += `（相手チームのスタメン...）\n`;
-                        text += `（相手チームの控え選手...）\n`;
+                        text += `（相手チームの監督・コーチ・控え選手...）\n`;
                     }
-                    text += `以上でございます。\n`;
-                    break;
-
-                case "umpireIntro":
-                    text = "この試合の審判は、\n";
+                    
+                    // 審判紹介をここに追加 (PDF(4))
+                    text += "\n続きまして、この試合の審判員をお知らせします。\n";
                     text += `球審：${umpires.pl || '（球審）'}、\n`;
                     text += `一塁：${umpires["1b"] || '（一塁）'}、\n`;
                     text += `二塁：${umpires["2b"] || '（二塁）'}、\n`;
@@ -815,11 +841,23 @@
                         text += `本日の放送担当は、${broadcaster} が担当いたします。\n`;
                     }
                     break;
-                    
-                case "inningStart":
+                
+                case "gameStart": // ⑥ 試合開始挨拶 (PDF(5))
+                    text = `選手の皆さんは、ホームベース前に整列してください。\n`;
+                    text += `（...選手整列...）\n`;
+                    text += `（...挨拶...）\n`;
+                    text += `ただいまより、${title || '（大会名）'}、\n`;
+                    text += `${firstTeam} 対 ${secondTeam} の試合を行います。`;
+                    break;
+
+                case "defenseIntroPost": // 廃止
+                case "defenseIntroPre": // 廃止
+                    text = "（このアナウンスは廃止されました。イニング開始に含まれます）";
+                    break;
+
+                case "inningStart": // ⑦ イニング開始 (PDF(6)準拠)
                     const isOurAttack = (playOrder === 'first' && topOrBottom === 'top') || (playOrder === 'second' && topOrBottom === 'bottom');
                     const attackTeam = isOurAttack ? myTeam : oppTeam;
-                    const defenseTeam = isOurAttack ? oppTeam : myTeam;
                     
                     text = `${inning}回 ${topOrBottom === 'top' ? '表' : '裏'}、${attackTeam}の攻撃は、\n`;
 
@@ -828,19 +866,6 @@
                         text += `${batter.order}番、${batter.name || '（名前）'}くん、背番号 ${batter.number || '？'}番。`;
                     } else {
                         text += `${gameProgress.currentBatterIndex + 1}番から...`;
-                    }
-                    
-                    // 守備側のアナウンス（交代があった場合など）
-                    if (!isOurAttack) {
-                        text += `\n\n${myTeam}の守備をお知らせします。\n`;
-                         roster.starting.forEach(p => {
-                            if (p.position && p.position !== 'DH' && p.name) {
-                                text += `${POSITIONS[p.position]}、${p.name}くん、\n`;
-                            }
-                        });
-                        text = text.slice(0, -2) + "。"; // 最後の「、\n」を「。」に
-                    } else {
-                        text += `\n\n${oppTeam}の守備は...`;
                     }
                     break;
 
@@ -868,54 +893,47 @@
                     text += lastSub.text;
                     break;
                 
-                case "gameEnd":
-                    text = `本日の試合は、\n`;
-                    text += `（スコア入力欄） 対 （スコア入力欄） をもちまして、\n`;
-                    text += `（勝利チーム）の勝ちとなりました。\n`;
-                    text += `（整列・礼）`;
+                case "gameEnd": // ⑩ 試合終了 (PDF(9)準拠)
+                    text = `ゲームセット。\n`;
+                    text += `本日の試合は、\n`;
+                    text += `（スコア） 対 （スコア） をもちまして、\n`;
+                    text += `（${firstTeam}） の勝ちとなりました。\n\n`; // TODO: 勝利チームを判定するロジックが必要
+                    text += `選手の皆さんは、ホームベース前に整列してください。\n`;
+                    text += `（...整列・挨拶...）`;
                     break;
                 
-                case "sheetKnockPre": // 相手(後攻)のノック
-                    text = `後攻、${oppTeam}のシートノックを行います。\n`;
-                    text += `時間は7分間です。\n`; //時間は仮で7分
-                    break;
-                
-                case "sheetKnockPost": // 相手(先攻)のノック
-                    text = `先攻、${oppTeam}のシートノックを行います。\n`;
-                    text += `時間は7分間です。\n`; //時間は仮で7分
-                    break;
-                
-                case "sheetKnockMyTeamPre": // 自チーム(先攻)のノック
-                    text = `先攻、${myTeam}のシートノックを行います。\n`;
-                    text += `時間は7分間です。\n`;
-                    break;
-
-                case "sheetKnockMyTeamPost": // 自チーム(後攻)のノック
-                    text = `後攻、${myTeam}のシートノックを行います。\n`;
+                case "sheetKnockPost": // ② 後攻チーム ノック (PDF(2))
+                    text = `後攻、${secondTeam}のシートノックを行います。\n`;
                     text += `時間は7分間です。\n`;
                     break;
                 
-                case "playersMeeting":
-                    text = `グランド整備を行いますので、選手及び指導者の方は、ベンチ前に整列し、しばらくお待ちください。`;
-                    break;
-
-                case "inningEndAttack":
-                    text = `（${inning}回 ${topOrBottom === 'top' ? '表' : '裏'}）${myTeam}の攻撃は、[得点]点でした。\n`;
-                    text += `（※得点を入力する欄が必要かもしれません）`;
-                    break;
-
-                case "inningEndDefense":
-                    text = `（${inning}回 ${topOrBottom === 'top' ? '表' : '裏'}）${myTeam}のピッチャー、〇〇くんの投球数は [投球数]球でした。\n`;
-                    text += `（※投球数を入力する欄が必要かもしれません）`;
+                case "sheetKnockPre": // ③ 先攻チーム ノック (PDF(2))
+                    text = `続きまして、先攻、${firstTeam}のシートノックを行います。\n`;
+                    text += `時間は7分間です。\n`;
                     break;
                 
-                case "gameStartTime":
-                    if (inning === 1 && topOrBottom === 'bottom') {
-                        const now = new Date();
-                        text = `試合開始時刻は ${now.getHours()}時 ${now.getMinutes()}分 でございます。`;
-                    } else {
-                        text = `（このアナウンスは1回裏 開始時のみ有効です）`;
-                    }
+                case "sheetKnockPreTeam1": // 廃止
+                case "sheetKnockPreTeam2": // 廃止
+                case "sheetKnockMyTeamPost": // 廃止
+                    text = "（このボタンは廃止されました）";
+                    break;
+                
+                case "playersMeeting": // 廃止 (gameStartに統合)
+                    text = "（このアナウンスは「⑥ 試合開始挨拶」に統合されました）";
+                    break;
+
+                case "inningEndAttack": // ⑨ イニング終了(得点) (PDF(8)準拠)
+                    const attackTeamEnd = ( (playOrder === 'first' && topOrBottom === 'top') || (playOrder === 'second' && topOrBottom === 'bottom') ) ? myTeam : oppTeam;
+                    text = `${inning}回 ${topOrBottom === 'top' ? '表' : '裏'}、${attackTeamEnd}の得点は、[ 〇 ]点です。\n`;
+                    text += `（※得点を入力する欄が必要です）`;
+                    break;
+
+                case "inningEndDefense": // 廃止
+                    text = `（このアナウンスは廃止されました）`;
+                    break;
+                
+                case "gameStartTime": // 廃止
+                    text = `（このアナウンスは廃止されました）`;
                     break;
 
                 default:
@@ -1142,8 +1160,8 @@
             // UIを描画
             renderUI();
             
-            // シートノックボタンの初期状態を設定
-            updateSheetKnockButtons(gameState.gameInfo.playOrder);
+            // シートノックボタンの初期状態を設定 (廃止)
+            // updateSheetKnockButtons(gameState.gameInfo.playOrder);
         }
 
         // 初期化実行
