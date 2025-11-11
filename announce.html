@@ -8,39 +8,37 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Alpine.js (defer は必須) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <style>
         /* Alpine.jsの初期化中（読み込み中）の要素を隠す */
         [x-cloak] {
             display: none !important;
         }
-        /* タブのスタイル (ボタン風) */
-        .tab-button {
-            @apply px-4 py-2.5 rounded-md font-semibold transition-all duration-200 shadow-sm text-base bg-gray-200 text-gray-700 hover:bg-gray-300;
+        /* メインのナビゲーションリンク */
+        .nav-link {
+            @apply px-3 py-2 text-gray-600 font-medium hover:text-blue-600 transition-colors;
         }
-        .tab-button.active {
-            @apply bg-blue-600 text-white hover:bg-blue-700;
+        .nav-link.active {
+            @apply text-blue-600 font-semibold;
         }
-        /* フォームのコンテナ (カード) */
-        .form-section {
+        
+        /* サブタブのスタイル */
+        .sub-tab-button {
+            @apply flex-1 py-3 px-4 text-center font-semibold text-gray-500 hover:bg-gray-50 transition-colors border-b-2 border-transparent;
+        }
+        .sub-tab-button.active {
+            @apply border-b-2 border-blue-600 text-blue-600;
+        }
+
+        /* フォームのコンテナ（カード風）- 選手マスタと試合設定で使用 */
+        .card-container {
             @apply bg-white p-6 rounded-lg shadow-sm border border-gray-200;
-        }
-        /* フォームセクションの見出し (アコーディオンボタン) */
-        .section-header {
-            @apply text-xl font-semibold mb-0 p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 rounded-lg;
-        }
-        .section-header:not(.rounded-lg) {
-            @apply rounded-b-none border-b border-gray-200; /* アコーディオンが開いているとき */
-        }
-        .section-content {
-            /* 閉じたアコーディオンのコンテンツは非表示 (Alpineが制御) */
-            @apply border border-gray-200 border-t-0 rounded-b-lg p-6;
         }
         
         /* セクション見出し (h3) */
         h3 {
-            @apply text-xl font-semibold mb-4 text-gray-800; /* border-b を削除 */
+            @apply text-xl font-semibold mb-4 text-gray-800;
         }
         /* 入力フィールド */
         input[type="text"], input[type="number"], select {
@@ -62,13 +60,24 @@
         .btn-success {
             @apply bg-green-600 text-white hover:bg-green-700;
         }
-        /* ターゲットUIの「読み込み」ボタン (黄) */
         .btn-load {
             @apply bg-yellow-600 text-white hover:bg-yellow-700;
         }
-        /* アナウンス出力エリア (画面下部フルワイド) */
+
+        /* アナウンスシート内のリンク風ボタン */
+        .action-link-button {
+            @apply text-left p-3 hover:bg-gray-50 rounded-md transition-colors;
+        }
+        .action-link-button .title {
+            @apply font-bold text-gray-800;
+        }
+        .action-link-button .description {
+            @apply text-sm text-gray-600;
+        }
+
+        /* アナウンス出力エリア (インラインに戻す) */
         .announcement-box {
-            @apply p-4 bg-white border-t border-gray-300 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)];
+            @apply mt-6 border-t border-gray-200 pt-4;
         }
         .announcement-box h4 {
             @apply text-lg font-semibold text-gray-800 mb-2;
@@ -79,7 +88,7 @@
     </style>
 </head>
 
-<body class="bg-gray-50 font-sans" x-data="appData()" x-cloak>
+<body class="bg-white font-sans" x-data="appData()" x-cloak>
 
     <!-- ヘッダー (ターゲットUIに合わせる) -->
     <header class="bg-gray-800 text-white shadow-md">
@@ -88,31 +97,30 @@
                 <h1 class="text-3xl font-bold">野球アナウンスシート</h1>
                 <p class="text-lg text-gray-400">ありんこアントス</p>
             </div>
-            <!-- ターゲットUIの右上ボタン (機能はなし) -->
             <button class="bg-gray-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-500">
                 利用マニュアル
             </button>
         </div>
     </header>
 
-    <!-- タブナビゲーション (ボタン風に変更) -->
-    <nav class="container mx-auto p-4 flex flex-wrap gap-4">
-        <button @click="activeTab = 'master'" :class="{'active': activeTab === 'master'}" class="tab-button">
+    <!-- タブナビゲーション (ボタン風 -> テキストリンクに変更) -->
+    <nav class="container mx-auto p-4 flex flex-wrap gap-4 border-b border-gray-200">
+        <button @click="activeTab = 'master'" :class="{'active': activeTab === 'master'}" class="nav-link">
             選手マスタ管理
         </button>
-        <button @click="activeTab = 'settings'" :class="{'active': activeTab === 'settings'}" class="tab-button">
+        <button @click="activeTab = 'settings'" :class="{'active': activeTab === 'settings'}" class="nav-link">
             試合設定
         </button>
-        <button @click="activeTab = 'announcement'" :class="{'active': activeTab === 'announcement'}" class="tab-button">
+        <button @click="activeTab = 'announcement'" :class="{'active': activeTab === 'announcement'}" class="nav-link">
             アナウンスシート
         </button>
     </nav>
 
-    <!-- メインコンテンツ (pb-64 を追加) -->
-    <main class="container mx-auto p-4 pb-64">
+    <!-- メインコンテンツ (pb-64 を削除) -->
+    <main class="container mx-auto p-4">
 
-        <!-- 1. 選手マスタ管理タブ -->
-        <div x-show="activeTab === 'master'" class="form-section">
+        <!-- 1. 選手マスタ管理タブ (カードスタイルに変更) -->
+        <div x-show="activeTab === 'master'" class="card-container">
             <h3>選手マスタ管理</h3>
             
             <!-- 新規選手登録フォーム -->
@@ -190,8 +198,8 @@
         <div x-show="activeTab === 'settings'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- 左列 -->
             <div class="space-y-6">
-                <!-- メンバー設定 -->
-                <div class="form-section">
+                <!-- メンバー設定 (カードスタイルに変更) -->
+                <div class="card-container">
                     <h3>メンバー設定</h3>
                     <!-- スターティングメンバー -->
                     <h4 class="text-lg font-semibold mb-3 text-gray-700">スターティングメンバー (1〜9番)</h4>
@@ -234,8 +242,8 @@
             
             <!-- 右列 -->
             <div class="space-y-6">
-                <!-- 試合情報 -->
-                <div class="form-section">
+                <!-- 試合情報 (カードスタイルに変更) -->
+                <div class="card-container">
                     <h3>試合情報</h3>
                     <div class="space-y-4">
                         <div>
@@ -293,20 +301,17 @@
                     </div>
                 </div>
 
-                <!-- 試合設定の保存 (ボタン色をターゲットに合わせる) -->
-                <div class="form-section">
+                <!-- 試合設定の保存 (カードスタイルに変更) -->
+                <div class="card-container">
                     <h3>試合設定の保存・復元</h3>
                     <p x-show="message.settings" x-text="message.settings" class="mb-4" :class="message.settings.includes('失敗') || message.settings.includes('利用できません') ? 'text-red-600' : 'text-green-600'"></p>
                     <div class="flex flex-wrap gap-3">
-                        <!-- 「保存」 -> btn-primary (青) に変更 -->
                         <button @click="saveGameSettings" class="btn btn-primary">
                             現在の試合設定を保存
                         </button>
-                        <!-- 「読み込み」 -> btn-load (黄) に変更 -->
                         <button @click="loadGameSettings" class="btn btn-load">
                             保存した設定を読み込む
                         </button>
-                        <!-- 「クリア」 -> btn-danger (赤) のまま -->
                         <button @click="clearGameSettings" class="btn btn-danger">
                             保存データをクリア
                         </button>
@@ -318,17 +323,17 @@
         <!-- 3. アナウンスシートタブ -->
         <div x-show="activeTab === 'announcement'">
 
-            <!-- アナウンスシート サブタブ -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <!-- アナウンスシート サブタブ (デザイン変更) -->
+            <div>
                 <nav class="flex border-b border-gray-200">
                     <button @click="announcementTab = 'game'" 
-                            :class="{'border-blue-600 text-blue-600': announcementTab === 'game', 'text-gray-500': announcementTab !== 'game'}"
-                            class="flex-1 py-3 px-4 text-center font-semibold border-b-2 hover:bg-gray-50 transition-colors">
+                            :class="{'active': announcementTab === 'game'}"
+                            class="sub-tab-button">
                         試合進行
                     </button>
                     <button @click="announcementTab = 'change'" 
-                            :class="{'border-blue-600 text-blue-600': announcementTab === 'change', 'text-gray-500': announcementTab !== 'change'}"
-                            class="flex-1 py-3 px-4 text-center font-semibold border-b-2 hover:bg-gray-50 transition-colors">
+                            :class="{'active': announcementTab === 'change'}"
+                            class="sub-tab-button">
                         選手交代
                     </button>
                 </nav>
@@ -336,50 +341,51 @@
             
             <p x-show="message.announcement" x-text="message.announcement" class="mb-4 text-sm" :class="message.announcement.includes('コピー') ? 'text-green-600' : 'text-gray-600'"></p>
 
-            <!-- 3-1. 試合進行サブタブ (アコーディオン化) -->
+            <!-- 3-1. 試合進行サブタブ (アコーディオンデザイン変更) -->
             <div x-show="announcementTab === 'game'" class="space-y-4" x-data="{ openSection: 'pregame' }">
 
                 <!-- 試合前 -->
                 <div>
-                    <!-- アコーディオンヘッダー (form-section風) -->
-                    <button @click="openSection = (openSection === 'pregame' ? '' : 'pregame')" class="w-full text-left form-section section-header" :class="{'rounded-lg': openSection !== 'pregame'}">
-                        <span>試合前のアナウンス</span>
-                        <span x-text="openSection === 'pregame' ? '閉じる' : '開く'" class="text-sm font-medium text-blue-600"></span>
-                    </button>
-                    <!-- アコーディオンコンテンツ -->
-                    <div x-show="openSection === 'pregame'" x-transition class="section-content">
+                    <!-- アコーディオンヘッダー (デザイン変更) -->
+                    <div class="flex justify-between items-center mt-6">
+                        <h3 class="text-xl font-semibold m-0">試合前のアナウンス</h3>
+                        <button @click="openSection = (openSection === 'pregame' ? '' : 'pregame')" class="text-sm font-medium text-blue-600 hover:underline" x-text="openSection === 'pregame' ? '閉じる' : '開く'"></button>
+                    </div>
+                    <!-- アコーディオンコンテンツ (デザイン変更) -->
+                    <div x-show="openSection === 'pregame'" x-transition class="pt-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <button @click="generateAnnouncement('call')" class="btn btn-secondary justify-start text-left h-auto">
-                                <span class="font-bold">① メンバー表お越しください</span><br>
-                                <span class="text-sm">本日の第...</span>
+                            <!-- アクションボタン (デザイン変更) -->
+                            <button @click="generateAnnouncement('call')" class="action-link-button">
+                                <span class="title">① メンバー表お越しください</span><br>
+                                <span class="description">本日の第...</span>
                             </button>
-                            <button @click="generateAnnouncement('knockPrep')" class="btn btn-secondary justify-start text-left h-auto">
-                                <span class="font-bold" x-text="'② シートノック準備 (' + teamB_Name + ')'"></span><br>
-                                <span class="text-sm" x-text="teamB_Name + 'はシートノックの準備を...'"></span>
+                            <button @click="generateAnnouncement('knockPrep')" class="action-link-button">
+                                <span class="title" x-text="'② シートノック準備 (' + teamB_Name + ')'"></span><br>
+                                <span class="description" x-text="teamB_Name + 'はシートノックの準備を...'"></span>
                             </button>
-                            <button @click="generateAnnouncement('knockStartA')" class="btn btn-secondary justify-start text-left h-auto">
-                                <span class="font-bold" x-text="'③ シートノック開始 (' + teamB_Name + ')'"></span><br>
-                                <span class="text-sm" x-text="teamB_Name + '、シートノックを開始して...'"></span>
+                            <button @click="generateAnnouncement('knockStartA')" class="action-link-button">
+                                <span class="title" x-text="'③ シートノック開始 (' + teamB_Name + ')'"></span><br>
+                                <span class="description" x-text="teamB_Name + '、シートノックを開始して...'"></span>
                             </button>
-                            <button @click="generateAnnouncement('knockStartB')" class="btn btn-secondary justify-start text-left h-auto">
-                                <span class="font-bold" x-text="'④ シートノック開始 (' + teamA_Name + ')'"></span><br>
-                                <span class="text-sm" x-text="teamA_Name + '、シートノックを開始して...'"></span>
+                            <button @click="generateAnnouncement('knockStartB')" class="action-link-button">
+                                <span class="title" x-text="'④ シートノック開始 (' + teamA_Name + ')'"></span><br>
+                                <span class="description" x-text="teamA_Name + '、シートノックを開始して...'"></span>
                             </button>
-                            <button @click="generateAnnouncement('start')" class="btn btn-secondary justify-start text-left h-auto">
-                                <span class="font-bold">⑤ 試合開始 (メンバー紹介)</span><br>
-                                <span class="text-sm">お待たせいたしました...</span>
+                            <button @click="generateAnnouncement('start')" class="action-link-button">
+                                <span class="title">⑤ 試合開始 (メンバー紹介)</span><br>
+                                <span class="description">お待たせいたしました...</span>
                             </button>
-                            <button @click="generateAnnouncement('umpires')" class="btn btn-secondary justify-start text-left h-auto">
-                                <span class="font-bold">⑥ 審判紹介</span><br>
-                                <span class="text-sm">この試合の審判は...</span>
+                            <button @click="generateAnnouncement('umpires')" class="action-link-button">
+                                <span class="title">⑥ 審判紹介</span><br>
+                                <span class="description">この試合の審判は...</span>
                             </button>
-                            <button @click="generateAnnouncement('lineupCall')" class="btn btn-secondary justify-start text-left h-auto">
-                                <span class="font-bold">⑦ グラウンド整備・整列</span><br>
-                                <span class="text-sm">グランド整備を行います...</span>
+                            <button @click="generateAnnouncement('lineupCall')" class="action-link-button">
+                                <span class="title">⑦ グラウンド整備・整列</span><br>
+                                <span class="description">グランド整備を行います...</span>
                             </button>
-                            <button @click="generateAnnouncement('fieldIntro')" class="btn btn-secondary justify-start text-left h-auto">
-                                <span class="font-bold" x-text="'⑧ 守備紹介 (' + teamB_Name + ')'"></span><br>
-                                <span class="text-sm">1回の表、...</span>
+                            <button @click="generateAnnouncement('fieldIntro')" class="action-link-button">
+                                <span class="title" x-text="'⑧ 守備紹介 (' + teamB_Name + ')'"></span><br>
+                                <span class="description">1回の表、...</span>
                             </button>
                         </div>
                     </div>
@@ -387,11 +393,11 @@
 
                 <!-- 試合中 -->
                 <div>
-                    <button @click="openSection = (openSection === 'ingame' ? '' : 'ingame')" class="w-full text-left form-section section-header" :class="{'rounded-lg': openSection !== 'ingame'}">
-                        <span>試合中のアナウンス</span>
-                        <span x-text="openSection === 'ingame' ? '閉じる' : '開く'" class="text-sm font-medium text-blue-600"></span>
-                    </button>
-                    <div x-show="openSection === 'ingame'" x-transition class="section-content">
+                    <div class="flex justify-between items-center mt-6">
+                        <h3 class="text-xl font-semibold m-0">試合中のアナウンス</h3>
+                        <button @click="openSection = (openSection === 'ingame' ? '' : 'ingame')" class="text-sm font-medium text-blue-600 hover:underline" x-text="openSection === 'ingame' ? '閉じる' : '開く'"></button>
+                    </div>
+                    <div x-show="openSection === 'ingame'" x-transition class="pt-4 p-4 border border-gray-200 rounded-lg mt-2">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">イニング</label>
@@ -438,11 +444,11 @@
                 
                 <!-- 試合終了 -->
                 <div>
-                    <button @click="openSection = (openSection === 'postgame' ? '' : 'postgame')" class="w-full text-left form-section section-header" :class="{'rounded-lg': openSection !== 'postgame'}">
-                        <span>試合終了</span>
-                        <span x-text="openSection === 'postgame' ? '閉じる' : '開く'" class="text-sm font-medium text-blue-600"></span>
-                    </button>
-                    <div x-show="openSection === 'postgame'" x-transition class="section-content">
+                    <div class="flex justify-between items-center mt-6">
+                        <h3 class="text-xl font-semibold m-0">試合終了</h3>
+                        <button @click="openSection = (openSection === 'postgame' ? '' : 'postgame')" class="text-sm font-medium text-blue-600 hover:underline" x-text="openSection === 'postgame' ? '閉じる' : '開く'"></button>
+                    </div>
+                    <div x-show="openSection === 'postgame'" x-transition class="pt-4 p-4 border border-gray-200 rounded-lg mt-2">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">ありんこアントス (得点)</label>
@@ -461,7 +467,216 @@
 
             </div>
 
-            <!-- 全タブ共通：アナウンス出力エリア (ここから削除) -->
+            <!-- 3-2. 選手交代サブタブ (アコーディオンデザイン変更) -->
+            <div x-show="announcementTab === 'change'" class="space-y-4" x-data="{ openChange: 'position' }">
+
+                <!-- 守備位置の交代 -->
+                <div>
+                    <div class="flex justify-between items-center mt-6">
+                        <h3 class="text-xl font-semibold m-0">守備位置の交代</h3>
+                        <button @click="openChange = (openChange === 'position' ? '' : 'position')" class="text-sm font-medium text-blue-600 hover:underline" x-text="openChange === 'position' ? '閉じる' : '開く'"></button>
+                    </div>
+                    <div x-show="openChange === 'position'" x-transition class="pt-4 p-4 border border-gray-200 rounded-lg mt-2">
+                        <div class="flex gap-4">
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-700">交代 (例: 4-1-5-2)</label>
+                                <input type="text" x-model="changeForms.positionChange" placeholder="例: 4-1 / 4-1-5-2">
+                            </div>
+                            <button @click="generateAnnouncement('positionChange')" class="btn btn-secondary self-end h-11">
+                                生成
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 選手の交代 -->
+                <div>
+                    <div class="flex justify-between items-center mt-6">
+                        <h3 class="text-xl font-semibold m-0">選手の交代</h3>
+                        <button @click="openChange = (openChange === 'player' ? '' : 'player')" class="text-sm font-medium text-blue-600 hover:underline" x-text="openChange === 'player' ? '閉じる' : '開く'"></button>
+                    </div>
+                    <div x-show="openChange === 'player'" x-transition class="pt-4 p-4 border border-gray-200 rounded-lg mt-2">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">交代する選手 (OUT)</label>
+                                <select x-model="changeForms.playerChange.outPlayerId">
+                                    <option value="">スタメンから選択</option>
+                                    <template x-for="p in currentStartingMembers">
+                                        <option :value="p.id" x-text="p.number + '. ' + p.name + ' (' + p.positionName + ')'"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">入る選手 (IN)</label>
+                                <select x-model="changeForms.playerChange.inPlayerId">
+                                    <option value="">控えから選択</option>
+                                    <template x-for="p in currentBenchPlayers">
+                                        <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <button @click="generateAnnouncement('playerChange')" class="btn btn-secondary h-11">
+                                生成
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 代打 -->
+                <div>
+                    <div class="flex justify-between items-center mt-6">
+                        <h3 class="text-xl font-semibold m-0">代打 (Pinch Hitter)</h3>
+                        <button @click="openChange = (openChange === 'ph' ? '' : 'ph')" class="text-sm font-medium text-blue-600 hover:underline" x-text="openChange === 'ph' ? '閉じる' : '開く'"></button>
+                    </div>
+                    <div x-show="openChange === 'ph'" x-transition class="pt-4 p-4 border border-gray-200 rounded-lg mt-2">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">交代する選手 (OUT)</label>
+                                <select x-model="changeForms.pinchHitter.outPlayerId">
+                                    <option value="">スタメンから選択</option>
+                                    <template x-for="p in currentStartingMembers">
+                                        <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">入る選手 (IN)</label>
+                                <select x-model="changeForms.pinchHitter.inPlayerId">
+                                    <option value="">控えから選択</option>
+                                    <template x-for="p in currentBenchPlayers">
+                                        <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <button @click="generateAnnouncement('pinchHitter')" class="btn btn-secondary h-11">
+                                生成
+                            </button>
+                        </div>
+                        <!-- 代打のその後 -->
+                        <div class="mt-6 border-t pt-6 space-y-4">
+                            <p class="text-sm text-gray-600">攻撃終了後、代打の選手のその後を選択してください。</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">守備位置</label>
+                                    <select x-model="changeForms.pinchHitter.newPositionId">
+                                        <option value="">守備位置を選択</option>
+                                        <template x-for="pos in positions">
+                                            <option :value="pos.id" x-text="pos.id + '. ' + pos.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <button @click="generateAnnouncement('pinchHitterDefense')" class="btn btn-secondary h-11">
+                                    ① そのまま守備につく
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700">交代する選手 (IN)</label>
+                                    <select x-model="changeForms.pinchHitter.subInPlayerId">
+                                        <option value="">控えから選択</option>
+                                        <template x-for="p in currentBenchPlayers">
+                                            <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <button @click="generateAnnouncement('pinchHitterSub')" class="btn btn-secondary h-11">
+                                    ② さらに交代する
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 代走 -->
+                <div>
+                    <div class="flex justify-between items-center mt-6">
+                        <h3 class="text-xl font-semibold m-0">代走 (Pinch Runner)</h3>
+                        <button @click="openChange = (openChange === 'pr' ? '' : 'pr')" class="text-sm font-medium text-blue-600 hover:underline" x-text="openChange === 'pr' ? '閉じる' : '開く'"></button>
+                    </div>
+                    <div x-show="openChange === 'pr'" x-transition class="pt-4 p-4 border border-gray-200 rounded-lg mt-2">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">交代する選手 (OUT)</label>
+                                <select x-model="changeForms.pinchRunner.outPlayerId">
+                                    <option value="">スタメンから選択</option>
+                                    <template x-for="p in currentStartingMembers">
+                                        <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">入る選手 (IN)</label>
+                                <select x-model="changeForms.pinchRunner.inPlayerId">
+                                    <option value="">控えから選択</option>
+                                    <template x-for="p in currentBenchPlayers">
+                                        <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">塁</label>
+                                <select x-model="changeForms.pinchRunner.base">
+                                    <option value="一">一塁</option>
+                                    <option value="二">二塁</option>
+                                    <option value="三">三塁</option>
+                                </select>
+                            </div>
+                            <button @click="generateAnnouncement('pinchRunner')" class="btn btn-secondary h-11 md:col-span-3">
+                                生成
+                            </button>
+                        </div>
+                        <!-- 代走のその後 (代打と共通) -->
+                        <div class="mt-6 border-t pt-6 space-y-4">
+                            <p class="text-sm text-gray-600">攻撃終了後、代走の選手のその後を選択してください。</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">守備位置</label>
+                                    <select x-model="changeForms.pinchRunner.newPositionId">
+                                        <option value="">守備位置を選択</option>
+                                        <template x-for="pos in positions">
+                                            <option :value="pos.id" x-text="pos.id + '. ' + pos.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <button @click="generateAnnouncement('pinchRunnerDefense')" class="btn btn-secondary h-11">
+                                    ① そのまま守備につく
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700">交代する選手 (IN)</label>
+                                    <select x-model="changeForms.pinchRunner.subInPlayerId">
+                                        <option value="">控えから選択</option>
+                                        <template x-for="p in currentBenchPlayers">
+                                            <option :value="p.id" x-text="p.number + '. ' + p.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <button @click="generateAnnouncement('pinchRunnerSub')" class="btn btn-secondary h-11">
+                                    ② さらに交代する
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 全タブ共通：アナウンス出力エリア (インラインに戻す) -->
+            <div x-show="announcement" x-transition class="announcement-box">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-lg font-semibold text-gray-800">生成されたアナウンス</h4>
+                    <button @click="announcement = ''" class="btn btn-secondary btn-sm px-3 py-1 text-sm">
+                        閉じる
+                    </button>
+                </div>
+                <textarea x-model="announcement" rows="6" class="font-mono leading-relaxed"></textarea>
+                <div class="flex justify-end gap-3 mt-2">
+                    <button @click="copyToClipboard(announcement)" class="btn btn-success btn-sm px-3 py-1 text-sm">
+                        クリップボードにコピー
+                    </button>
+                </div>
+            </div>
 
         </div>
 
@@ -471,33 +686,7 @@
         <p>&copy; 2024 Baseball Announcement App</p>
     </footer>
 
-    <!-- 全タブ共通：アナウンス出力エリア (メインの外に移動し、画面下部に固定) -->
-    <div x-show="announcement" 
-         class="announcement-box fixed bottom-0 left-0 right-0 z-30"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="transform translate-y-full"
-         x-transition:enter-end="transform translate-y-0"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="transform translate-y-0"
-         x-transition:leave-end="transform translate-y-full">
-        
-        <!-- コンテンツ幅をコンテナに合わせる -->
-        <div class="container mx-auto px-4"> 
-            <div class="flex justify-between items-center mb-2">
-                <h4 class="text-lg font-semibold text-gray-800">生成されたアナウンス</h4>
-                <!-- 「クリア」を「閉じる」に変更 -->
-                <button @click="announcement = ''" class="btn btn-secondary btn-sm px-3 py-1 text-sm">
-                    閉じる
-                </button>
-            </div>
-            <textarea x-model="announcement" rows="6" class="font-mono leading-relaxed"></textarea>
-            <div class="flex justify-end gap-3 mt-2">
-                <button @click="copyToClipboard(announcement)" class="btn btn-success btn-sm px-3 py-1 text-sm">
-                    クリップボードにコピー
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- 全タブ共通：アナウンス出力エリア (ここから削除) -->
 
 
     <!-- Alpine.js データとロジック (変更なし) -->
