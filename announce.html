@@ -239,19 +239,37 @@
 
                 <!-- 5. アナウンス -->
                 <section id="announce" class="bg-white rounded-lg shadow p-6 sticky top-96">
-                    <h2 class="text-xl font-bold mb-4 border-b pb-2">5. アナウンス内容</h2>
+                    <h2 class="text-xl font-bold mb-4 border-b pb-2">5. アナウンス フロー</h2>
                     
                     <!-- アナウンス種類ボタン -->
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="preGame">試合開始前</button>
-                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="startMember">スタメン発表</button>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                        <!-- 試合開始前 -->
+                        <h3 class="col-span-full text-md font-semibold mt-2 border-b">試合開始前</h3>
+                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="preGame">① 試合開始前</button>
+                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockPost" id="btnSheetKnockPost">② 相手ノック(後)</button>
+                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockPre" id="btnSheetKnockPre">③ 相手ノック(先)</button>
+                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="startMember">④⑤ メンバー表</button>
+                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockMyTeamPre" id="btnSheetKnockMyTeamPre">⑥ 自チームノック(先)</button>
+                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockMyTeamPost" id="btnSheetKnockMyTeamPost">⑥ 自チームノック(後)</button>
+                        <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="playersMeeting">⑦ 選手集合</button>
                         <button class="announce-btn bg-green-100 hover:bg-green-200 text-green-800 py-2 px-3 rounded-lg" data-type="umpireIntro">審判紹介</button>
-                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg" data-type="inningStart">イニング開始</button>
-                        <button class="announce-btn bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-3 rounded-lg" data-type="batterUp">打者紹介</button>
-                        <button class="announce-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 px-3 rounded-lg" data-type="substitution">選手交代</button>
-                        <button class="announce-btn bg-red-100 hover:bg-red-200 text-red-800 py-2 px-3 rounded-lg" data-type="gameEnd">試合終了</button>
-                        <button class="announce-btn bg-gray-100 text-gray-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockPre" id="btnSheetKnockPre">シートノック(先)</button>
-                        <button class="announce-btn bg-gray-100 text-gray-800 py-2 px-3 rounded-lg disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" data-type="sheetKnockPost" id="btnSheetKnockPost">シートノック(後)</button>
+
+                        <!-- 試合中 -->
+                        <h3 class="col-span-full text-md font-semibold mt-2 border-b">試合中</h3>
+                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="inningStart">⑧⑨⑩ イニング開始</button>
+                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="batterUp">打者紹介</button>
+                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="inningEndAttack">⑪ イニング終了(攻撃)</button>
+                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="inningEndDefense">⑫ イニング終了(守備)</button>
+                        <button class="announce-btn bg-teal-100 hover:bg-teal-200 text-teal-800 py-2 px-3 rounded-lg" data-type="gameStartTime">⑬ 試合開始時刻</button>
+                        <button class="announce-btn bg-red-100 hover:bg-red-200 text-red-800 py-2 px-3 rounded-lg" data-type="gameEnd">⑭ 試合終了</button>
+
+                        <!-- 交代 -->
+                        <h3 class="col-span-full text-md font-semibold mt-2 border-b">選手交代 (履歴読上)</h3>
+                        <button class="announce-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 px-3 rounded-lg" data-type="substitution">交代(全般)</button>
+                        <button class="announce-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 px-3 rounded-lg" data-type="subPinchHitter">代打</button>
+                        <button class="announce-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 px-3 rounded-lg" data-type="subPinchRunner">代走</button>
+                        <button class="announce-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 px-3 rounded-lg" data-type="subPlayer">選手交代</button>
+                        <button class="announce-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 px-3 rounded-lg" data-type="subPosition">守備位置交代</button>
                     </div>
 
                     <!-- アナウンス表示エリア -->
@@ -698,25 +716,28 @@
         function updateSheetKnockButtons(playOrder) {
             const btnPre = document.getElementById('btnSheetKnockPre');
             const btnPost = document.getElementById('btnSheetKnockPost');
-            if (!btnPre || !btnPost) return;
+            const btnMyTeamPre = document.getElementById('btnSheetKnockMyTeamPre');
+            const btnMyTeamPost = document.getElementById('btnSheetKnockMyTeamPost');
+            if (!btnPre || !btnPost || !btnMyTeamPre || !btnMyTeamPost) return;
 
-            if (playOrder === 'first') {
-                btnPre.disabled = false;
-                btnPre.classList.remove('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
-                btnPre.classList.add('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
-                
-                btnPost.disabled = true;
-                btnPost.classList.add('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
-                btnPost.classList.remove('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
-            } else { // second
-                btnPre.disabled = true;
-                btnPre.classList.add('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
-                btnPre.classList.remove('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+            const buttons = [
+                { el: btnPre,          active: playOrder === 'first',  type: 'pre' },
+                { el: btnPost,         active: playOrder === 'second', type: 'post' },
+                { el: btnMyTeamPre,    active: playOrder === 'first',  type: 'myTeamPre' },
+                { el: btnMyTeamPost,   active: playOrder === 'second', type: 'myTeamPost' },
+            ];
 
-                btnPost.disabled = false;
-                btnPost.classList.remove('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
-                btnPost.classList.add('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
-            }
+            buttons.forEach(btn => {
+                if (btn.active) {
+                    btn.el.disabled = false;
+                    btn.el.classList.remove('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
+                    btn.el.classList.add('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+                } else {
+                    btn.el.disabled = true;
+                    btn.el.classList.add('disabled:bg-gray-100', 'disabled:text-gray-400', 'disabled:cursor-not-allowed', 'bg-gray-100');
+                    btn.el.classList.remove('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+                }
+            });
         }
 
 
@@ -832,6 +853,11 @@
                     }
                     break;
 
+                // 交代系のアナウンスは、すべて直近の履歴を読み上げる
+                case "subPosition":
+                case "subPlayer":
+                case "subPinchHitter":
+                case "subPinchRunner":
                 case "substitution":
                     if(gameState.substitutionHistory.length === 0) {
                         text = "（まだ選手交代はありません）";
@@ -849,16 +875,49 @@
                     text += `（整列・礼）`;
                     break;
                 
-                case "sheetKnockPre": // 自チームが先攻の時 = 相手(後攻)のノック
+                case "sheetKnockPre": // 相手(後攻)のノック
                     text = `後攻、${oppTeam}のシートノックを行います。\n`;
                     text += `時間は7分間です。\n`; //時間は仮で7分
                     break;
                 
-                case "sheetKnockPost": // 自チームが後攻の時 = 相手(先攻)のノック
+                case "sheetKnockPost": // 相手(先攻)のノック
                     text = `先攻、${oppTeam}のシートノックを行います。\n`;
                     text += `時間は7分間です。\n`; //時間は仮で7分
                     break;
-                    
+                
+                case "sheetKnockMyTeamPre": // 自チーム(先攻)のノック
+                    text = `先攻、${myTeam}のシートノックを行います。\n`;
+                    text += `時間は7分間です。\n`;
+                    break;
+
+                case "sheetKnockMyTeamPost": // 自チーム(後攻)のノック
+                    text = `後攻、${myTeam}のシートノックを行います。\n`;
+                    text += `時間は7分間です。\n`;
+                    break;
+                
+                case "playersMeeting":
+                    text = `グランド整備を行いますので、選手及び指導者の方は、ベンチ前に整列し、しばらくお待ちください。`;
+                    break;
+
+                case "inningEndAttack":
+                    text = `（${inning}回 ${topOrBottom === 'top' ? '表' : '裏'}）${myTeam}の攻撃は、[得点]点でした。\n`;
+                    text += `（※得点を入力する欄が必要かもしれません）`;
+                    break;
+
+                case "inningEndDefense":
+                    text = `（${inning}回 ${topOrBottom === 'top' ? '表' : '裏'}）${myTeam}のピッチャー、〇〇くんの投球数は [投球数]球でした。\n`;
+                    text += `（※投球数を入力する欄が必要かもしれません）`;
+                    break;
+                
+                case "gameStartTime":
+                    if (inning === 1 && topOrBottom === 'bottom') {
+                        const now = new Date();
+                        text = `試合開始時刻は ${now.getHours()}時 ${now.getMinutes()}分 でございます。`;
+                    } else {
+                        text = `（このアナウンスは1回裏 開始時のみ有効です）`;
+                    }
+                    break;
+
                 default:
                     text = `「${type}」のアナウンスは準備中です。`;
                     break; // ★修正: default に break を追加
