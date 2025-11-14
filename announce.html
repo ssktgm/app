@@ -23,45 +23,61 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 p-4 md:p-8">
-    <div class="max-w-7xl mx-auto">
-        <header class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">野球アナウンス サポートツール</h1>
-        </header>
-
-        <!-- データ操作エリア -->
-        <div class="mb-6 p-4 bg-white rounded-lg shadow">
-            <h2 class="text-lg font-semibold mb-3">データ操作 (localStorage)</h2>
-            <div class="flex flex-wrap gap-3">
-                <button id="saveData" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    ブラウザに保存
-                </button>
-                <button id="loadData" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    ブラウザから読込
-                </button>
-                <button id="resetData" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    リセット
+<body class="bg-gray-100">
+    <header class="sticky top-0 z-40 bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-3">
+                <h1 class="text-2xl font-bold text-gray-800">野球アナウンス サポートツール</h1>
+                <button id="toggleDataMenu" class="p-2 rounded-md lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
                 </button>
             </div>
-            <p id="storageStatus" class="text-sm text-gray-500 mt-2"></p>
-            
-            <h2 class="text-lg font-semibold mb-3 mt-4">データ操作 (ファイル)</h2>
-            <div class="flex flex-wrap gap-3">
-                <button id="exportData" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    ファイルに書き出し (DL)
-                </button>
-                <button id="importData" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    ファイルから読み込み (UL)
-                </button>
-                <input type="file" id="fileInput" accept=".json" class="hidden-file-input">
-            </div>
-            <p id="fileStatus" class="text-sm text-gray-500 mt-2"></p>
         </div>
+        <!-- データ操作エリア -->
+        <div id="dataMenu" class="hidden lg:block bg-gray-50 border-t border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h2 class="text-lg font-semibold mb-3">データ操作 (ブラウザ)</h2>
+                        <div class="flex flex-wrap gap-3">
+                            <button id="saveData" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                                ブラウザに保存
+                            </button>
+                            <button id="loadData" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                                ブラウザから読込
+                            </button>
+                            <button id="resetData" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                                リセット
+                            </button>
+                        </div>
+                        <p id="storageStatus" class="text-sm text-gray-500 mt-2"></p>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold mb-3">データ操作 (ファイル)</h2>
+                        <div class="flex flex-wrap gap-3">
+                            <button id="exportData" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                                ファイルに書き出し (DL)
+                            </button>
+                            <button id="importData" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                                ファイルから読み込み (UL)
+                            </button>
+                            <input type="file" id="fileInput" accept=".json" class="hidden-file-input">
+                        </div>
+                        <p id="fileStatus" class="text-sm text-gray-500 mt-2"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <main class="max-w-7xl mx-auto p-4 md:p-8">
+
+        <div class="flex flex-col-reverse lg:flex-row gap-6">
             
             <!-- 左カラム: 設定とメンバー登録 -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:w-2/3 space-y-6">
                 <!-- 1. 試合情報 -->
                 <section id="setup" class="bg-white rounded-lg shadow p-6">
                     <h2 class="text-xl font-bold mb-4 border-b pb-2">1. 試合情報</h2>
@@ -224,7 +240,7 @@
             </div>
 
             <!-- 右カラム: 試合進行とアナウンス -->
-            <div class="lg:col-span-1 space-y-6">
+            <div class="lg:w-1/3 space-y-6">
                 <!-- 4. 試合進行 -->
                 <section id="game" class="bg-white rounded-lg shadow p-6 sticky top-6">
                     <h2 class="text-xl font-bold mb-4 border-b pb-2">4. 試合進行</h2>
@@ -259,8 +275,6 @@
 
                 <!-- 5. アナウンス -->
                 <section id="announce" class="bg-white rounded-lg shadow p-6 sticky top-96">
-                    <h2 class="text-xl font-bold mb-4 border-b pb-2">5. アナウンス フロー</h2>
-                    
                     <!-- アナウンス種類ボタン -->
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                         <!-- 試合開始前 -->
@@ -294,13 +308,13 @@
                     </div>
 
                     <!-- アナウンス表示エリア -->
-                    <div id="announceOutput" class="w-full h-64 bg-gray-800 text-white p-4 rounded-lg overflow-y-auto font-mono whitespace-pre-wrap">
+                    <div id="announceOutput" class="w-full min-h-[16rem] bg-gray-800 text-white p-4 rounded-lg overflow-y-auto font-mono whitespace-pre-wrap">
                         ここにアナウンス内容が表示されます。
                     </div>
                 </section>
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- カスタム確認モーダル -->
     <div id="customConfirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center" style="display: none; z-index: 999;">
@@ -1145,6 +1159,15 @@
 
         // --- 初期化 ---
         function init() {
+            // 新しいヘッダーのトグル機能
+            const toggleButton = document.getElementById('toggleDataMenu');
+            const dataMenu = document.getElementById('dataMenu');
+            if (toggleButton) {
+                toggleButton.addEventListener('click', () => {
+                    dataMenu.classList.toggle('hidden');
+                });
+            }
+
             // デフォルト状態を読み込み
             gameState = getDefaultState();
             
