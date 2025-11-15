@@ -1611,7 +1611,7 @@ https://maps.app.goo.gl/..."></textarea>
             outputLines.push(`◆${dInfo.name} ${dLimit}`);
             // 備考 (：でプレフィックス)
             if (dInfo.memo) {
-                outputLines.push(dInfo.memo.replace(/^/gm, '：')); 
+                outputLines.push(dInfo.memo.replace(/^/gm, '')); 
             }
             // 配車情報 (・でプレフィックス)
             designatedCars.forEach(car => {
