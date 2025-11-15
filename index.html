@@ -114,20 +114,17 @@
             </a>
         </div>
 
-        <!-- ★★★ 修正箇所 スタート ★★★ -->
+        <!-- ★★★ 修正箇所 スタート (管理メニューの変更) ★★★ -->
         <section id="data-controls-section" class="mb-6 bg-white p-4 rounded-lg shadow">
             
             <details id="data-controls-details" open>
-                <!-- ★ 修正: Summaryの文言 -->
                 <summary class="text-xl font-semibold text-gray-700 mb-3 cursor-pointer select-none">
                     管理メニュー・メッセージ
                 </summary>
 
-                <!-- ★ 修正: レイアウト構造を変更 (md:grid-cols-3 を削除) -->
                 <div class="pt-3 border-t">
 
                     <!-- 1. 操作エリア -->
-                    <!-- ★ 修正: lg:grid-cols-4 を追加 -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
 
                         <!-- ① 現在の作業 -->
@@ -201,7 +198,6 @@
                     </div>
 
                     <!-- 2. メッセージエリア -->
-                    <!-- ★ 修正: メッセージエリアを操作エリアの下に移動 (mt-4追加) -->
                     <div class="mt-4">
                         <div id="message" class="hidden p-4 h-full border rounded-lg max-h-48 overflow-y-auto" role="alert">
                             <span id="message-text"></span>
@@ -215,40 +211,46 @@
         <!-- ★★★ 修正箇所 エンド ★★★ -->
 
 
+        <!-- ★★★ 修正箇所 スタート (メインコンテンツのレイアウト順序変更) ★★★ -->
         <div id="main-content" class="main-grid-layout">
 
-            <section>
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-semibold text-gray-700">1. 参加者を選択</h2>
-                    <button id="toggle-details-button" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded-lg text-sm transition duration-200">
-                        すべて閉じる
-                    </button>
-                </div>
-                <div id="participant-list" class="space-y-2 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow">
-                    <p class="text-gray-500">マスターデータを読み込み中...</p>
-                </div>
-            </section>
-
-            <section>
-                <h2 class="text-xl font-semibold text-gray-700 mb-3">2. 車とドライバーを選択</h2>
-                <div id="car-list" class="space-y-3 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow">
-                    <p class="text-gray-500">マスターデータを読み込み中...</p>
-                </div>
-            </section>
-
-            <section>
-                <h2 class="text-xl font-semibold text-gray-700 mb-3">3. 参加者一覧(別便の人をチェック)</h2>
-                <div id="exclusion-list" class="space-y-2 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow min-h-[50px]">
-                    <p class="text-gray-500 text-sm">ステップ1で参加者を選択してください。</p>
-                </div>
-            </section>
-
+            <!-- 1. イベント日とイベント名 -->
             <section class="md:col-span-3">
-                 <h2 class="text-xl font-semibold text-gray-700 mb-3">4. グラウンド／駐車場情報入力 (入力後、割り当て実行)</h2>
+                 <h2 class="text-xl font-semibold text-gray-700 mb-3">1. イベント日とイベント名</h2>
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white p-4 rounded-lg shadow">
+                     <div>
+                        <label for="event-date" class="block text-sm font-medium text-gray-700">イベント日</label>
+                        <input type="text" id="event-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="2025/11/3(祝)">
+                     </div>
+                     <div class="md:col-span-2">
+                        <label for="event-name" class="block text-sm font-medium text-gray-700">イベント名</label>
+                        <input type="text" id="event-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="vs流山マリーンズ(練習試合)">
+                     </div>
+                 </div>
+            </section>
+            
+            <!-- 2. タイムライン・特記事項 -->
+            <section class="md:col-span-3">
+                 <h2 class="text-xl font-semibold text-gray-700 mb-3">2. タイムライン・特記事項</h2>
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-4 rounded-lg shadow">
                      <div>
-                        <label for="ground-name" class="block text-sm font-medium text-gray-700">グラウンド名</label>
-                        <input type="text" id="ground-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="例: ○○小学校">
+                        <label for="event-timeline" class="block text-sm font-medium text-gray-700">イベントタイムライン</label>
+                        <textarea id="event-timeline" rows="5" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="東小集合 8:30&#10;東小出発 8:40&#10;PB 10:00"></textarea>
+                     </div>
+                     <div>
+                        <label for="event-notes" class="block text-sm font-medium text-gray-700">その他特記事項</label>
+                        <textarea id="event-notes" rows="5" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="・お弁当&#10;・マナーパンツ"></textarea>
+                    </div>
+                 </div>
+            </section>
+
+            <!-- 3. グラウンド・駐車場 (旧ステップ4) -->
+            <section class="md:col-span-3">
+                 <h2 class="text-xl font-semibold text-gray-700 mb-3">3. グラウンド・駐車場情報</h2>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-4 rounded-lg shadow">
+                     <div>
+                        <label for="ground-name" class="block text-sm font-medium text-gray-700">グラウンド名 (例: ＠〇〇小)</label>
+                        <input type="text" id="ground-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="例: 東谷グラウンド">
                         
                         <label for="parking-designated-name" class="block text-sm font-medium text-gray-700 mt-3">指定駐車場の名称 (例: SF-A面)</label>
                         <input type="text" id="parking-designated-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="SF-A面">
@@ -267,19 +269,51 @@ https://maps.app.goo.gl/..."></textarea>
                         <label for="parking-other-memo" class="block text-sm font-medium text-gray-700 mt-3">備考 (例: 地図URL、注意事項)</label>
                         <textarea id="parking-other-memo" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="コミュニティプラザ奥、テニスコートのさらに奥"></textarea>
                     
-                        <div class="mt-12 text-center">
-                            <button id="assign-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105 text-lg">
-                                割り当て実行
-                            </button>
-                        </div>
+                        <!-- ★ 割り当てボタンはここから移動 -->
                      </div>
                  </div>
             </section>
 
+            <!-- 4. 参加者 (旧ステップ1) -->
+            <section>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-semibold text-gray-700">4. 参加者を選択</h2>
+                    <button id="toggle-details-button" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded-lg text-sm transition duration-200">
+                        すべて閉じる
+                    </button>
+                </div>
+                <div id="participant-list" class="space-y-2 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow">
+                    <p class="text-gray-500">マスターデータを読み込み中...</p>
+                </div>
+            </section>
 
+            <!-- 5. 車 (旧ステップ2) -->
+            <section>
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">5. 車とドライバーを選択</h2>
+                <div id="car-list" class="space-y-3 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow">
+                    <p class="text-gray-500">マスターデータを読み込み中...</p>
+                </div>
+            </section>
+
+            <!-- 6. 別便 (旧ステップ3) -->
+            <section>
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">6. 参加者一覧(別便の人をチェック)</h2>
+                <div id="exclusion-list" class="space-y-2 h-[600px] overflow-y-auto bg-white p-4 rounded-lg shadow min-h-[50px]">
+                    <p class="text-gray-500 text-sm">ステップ4で参加者を選択してください。</p>
+                </div>
+            </section>
+
+            <!-- ★ 割り当て実行ボタン (新規セクション) -->
+            <section class="md:col-span-3 text-center">
+                <button id="assign-button" class="w-full md:w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105 text-lg">
+                    割り当て実行
+                </button>
+            </section>
+
+            <!-- 7. 割り当て結果 (旧ステップ5) -->
             <section id="results-section" class="md:col-span-3"> 
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-semibold text-gray-700">5. 割り当て結果 (チェックボックスで入れ替え)</h2>
+                    <h2 class="text-xl font-semibold text-gray-700">7. 割り当て結果 (チェックボックスで入れ替え)</h2>
                     <button id="show-text-output-button" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-lg shadow text-sm transition duration-200">
                         テキスト出力
                     </button>
@@ -293,9 +327,11 @@ https://maps.app.goo.gl/..."></textarea>
                 </div>
 
                 <div id="results" class="space-y-6"> 
-                    <p id="results-placeholder" class="text-gray-500 text-sm bg-white p-4 rounded-lg shadow min-h-[50px]">ステップ4の「割り当て実行」を押してください。</p>
+                    <p id="results-placeholder" class="text-gray-500 text-sm bg-white p-4 rounded-lg shadow min-h-[50px]">「割り当て実行」を押してください。</p>
                 </div>
             </section>
+        
+        <!-- ★★★ 修正箇所 エンド (メインコンテンツ) ★★★ -->
 
         </div> </div>
 
@@ -373,10 +409,18 @@ https://maps.app.goo.gl/..."></textarea>
         let excludedParticipantIds = new Set();
         let participantData = new Map(); // participantId -> { grade, school, other, memo }
         
+        // ★★★ 変更: 駐車場とイベント情報を分離 ★★★
         let parkingInfo = {
             groundName: '',
             designated: { name: '', limit: 0, memo: '' },
             other: { name: '', memo: '' }
+        };
+        // ★★★ 新規: イベント情報 ★★★
+        let eventInfo = {
+            date: '',
+            name: '',
+            timeline: '',
+            notes: ''
         };
         let currentAssignments = []; // { id, name, ..., assignedParking: 'designated' | 'other' | 'excluded' }
         
@@ -396,9 +440,7 @@ https://maps.app.goo.gl/..."></textarea>
         const messageText = document.getElementById('message-text');
         const messageClose = document.getElementById('message-close');
         
-        // ★ 新規: <details> 要素への参照
         const dataControlsDetails = document.getElementById('data-controls-details');
-        // ★ 新規: メッセージ自動非表示用のタイマー
         let messageTimer = null;
         
         const exportStateButton = document.getElementById('export-state-button');
@@ -410,6 +452,13 @@ https://maps.app.goo.gl/..."></textarea>
         const copyTextOutputButton = document.getElementById('copy-text-output-button');
         const toggleDetailsButton = document.getElementById('toggle-details-button');
         
+        // ★★★ 新規: イベント情報DOM ★★★
+        const eventDateEl = document.getElementById('event-date');
+        const eventNameEl = document.getElementById('event-name');
+        const eventTimelineEl = document.getElementById('event-timeline');
+        const eventNotesEl = document.getElementById('event-notes');
+
+        // ★★★ 変更: 駐車場DOM (旧) ★★★
         const groundNameEl = document.getElementById('ground-name');
         const parkingDesignatedNameEl = document.getElementById('parking-designated-name');
         const parkingDesignatedLimitEl = document.getElementById('parking-designated-limit');
@@ -688,7 +737,7 @@ https://maps.app.goo.gl/..."></textarea>
             exclusionListEl.innerHTML = '';
             const participants = ALL_PARTICIPANTS_FLAT.filter(p => selectedParticipantIds.has(p.id));
             if (participants.length === 0) {
-                exclusionListEl.innerHTML = '<p class="text-gray-500 text-sm">ステップ1で参加者を選択してください。</p>';
+                exclusionListEl.innerHTML = '<p class="text-gray-500 text-sm">ステップ4で参加者を選択してください。</p>';
                 return;
             }
             participants.forEach(p => {
@@ -702,12 +751,13 @@ https://maps.app.goo.gl/..."></textarea>
             });
         }
 
+        // ★★★ 変更: renderResults は eventInfo を引数に取らない (グローバル変数を見るため) ★★★
         function renderResults(assignments, parkingData) {
             resultsEl.innerHTML = '';
             selectedSwapItems = { car: null, seat: null }; 
             
             if (assignments.length === 0) {
-                resultsEl.innerHTML = `<p id="results-placeholder" class="text-gray-500 text-sm bg-white p-4 rounded-lg shadow min-h-[50px] md:col-span-3">ステップ4の「割り当て実行」を押してください。</p>`;
+                resultsEl.innerHTML = `<p id="results-placeholder" class="text-gray-500 text-sm bg-white p-4 rounded-lg shadow min-h-[50px] md:col-span-3">「割り当て実行」を押してください。</p>`;
                 return;
             }
             
@@ -715,8 +765,10 @@ https://maps.app.goo.gl/..."></textarea>
             const otherCars = assignments.filter(c => c.assignedParking === 'other');
             const excludedCars = assignments.filter(c => c.id === 'excluded-car'); 
 
-            if (parkingData.groundName) {
-                 resultsEl.innerHTML += `<h2 class="text-2xl font-bold text-gray-800 mb-2">${parkingData.groundName}</h2>`;
+            // ★★★ 変更: イベント名とグラウンド名をテキスト出力に合わせて表示 (グローバル eventInfo を参照) ★★★
+            const groundName = parkingData.groundName ? `@${parkingData.groundName}` : '';
+            if (eventInfo.name || eventInfo.date || groundName) {
+                 resultsEl.innerHTML += `<h2 class="text-2xl font-bold text-gray-800 mb-2">${eventInfo.date} ${eventInfo.name} ${groundName}</h2>`;
             }
 
             resultsEl.appendChild(createParkingSection('designated', parkingData.designated, designatedCars));
@@ -734,16 +786,19 @@ https://maps.app.goo.gl/..."></textarea>
             let titleHtml = '';
             
             if (type === 'designated') {
-                 titleHtml = `□ ${info.name || '指定駐車場'} (${info.limit > 0 ? info.limit + '台' : '台数制限なし'})`;
+                 // ★★★ 変更: テキスト出力の形式に合わせる ★★★
+                 const limitText = (info.limit && info.limit < 999) ? `(※台数制限${info.limit}台)` : '';
+                 titleHtml = `◆ ${info.name || '指定駐車場'} ${limitText}`;
             } else if (type === 'other') {
-                 titleHtml = `□ ${info.name || '指定駐車場以外'}`;
+                 titleHtml = `◆ ${info.name || '指定駐車場以外'}`;
             } else {
-                 titleHtml = `□ 別便`;
+                 titleHtml = `◆ 別便`;
             }
             
+            // ★★★ 変更: 備考のプレフィックスを「：」に ★★★
             section.innerHTML = `
                 <h3 class="text-lg font-semibold text-gray-800 mb-1">${titleHtml}</h3>
-                <p class="text-sm text-gray-600 mb-4 ml-4 whitespace-pre-line">${info.memo}</p>
+                <p class="text-sm text-gray-600 mb-4 ml-4 whitespace-pre-line">${info.memo.replace(/^/gm, '：')}</p>
                 <div class="results-grid-layout">
                     ${cars.map(car => createCarCardHtml(car)).join('')}
                 </div>
@@ -902,6 +957,7 @@ https://maps.app.goo.gl/..."></textarea>
             }
             
             selectedSwapItems = { car: null, seat: null };
+            // ★★★ 変更: renderResults は eventInfo を引数に取らない ★★★
             renderResults(currentAssignments, parkingInfo); 
         }
         
@@ -1058,8 +1114,18 @@ https://maps.app.goo.gl/..."></textarea>
         }
         
         function handleAssignment() { 
-             if (selectedCarIds.size === 0) { showMessage('ステップ2で車を1台以上選択してください。', 'error'); return; }
+             // ★★★ 変更: 参照するDOMを変更 ★★★
+             if (selectedCarIds.size === 0) { showMessage('ステップ5で車を1台以上選択してください。', 'error'); return; }
              
+             // ★★★ 新規: イベント情報をグローバル変数にセット ★★★
+             eventInfo = {
+                date: eventDateEl.value,
+                name: eventNameEl.value,
+                timeline: eventTimelineEl.value,
+                notes: eventNotesEl.value
+             };
+             
+             // ★★★ 変更: 駐車場情報をグローバル変数にセット ★★★
              parkingInfo = {
                  groundName: groundNameEl.value, 
                  designated: {
@@ -1109,6 +1175,7 @@ https://maps.app.goo.gl/..."></textarea>
              assignments.push({ id: 'excluded-car', name: '別便', capacity: 999, baseCapacity: 999, driver: null, members: excludedParticipants, hasLuggage: false, assignedParking: 'excluded' }); 
              
              currentAssignments = assignments; 
+             // ★★★ 変更: renderResults は eventInfo を引数に取らない ★★★
              renderResults(currentAssignments, parkingInfo); 
              currentAssignments.forEach(car => { car.element = document.getElementById(`car-result-${car.id}`); }); 
              updateTextOutput();
@@ -1129,46 +1196,37 @@ https://maps.app.goo.gl/..."></textarea>
             const detailsElements = participantListEl.querySelectorAll('details'); const shouldOpen = toggleDetailsButton.textContent === 'すべて開く'; detailsElements.forEach(details => { details.open = shouldOpen; }); toggleDetailsButton.textContent = shouldOpen ? 'すべて閉じる' : 'すべて開く';
         }
         
-        // ★ 修正: showMessage 関数 (自動オープン、自動スクロール、自動非表示)
         function showMessage(message, type = 'info'){ 
-            // 既存の自動非表示タイマーがあれば解除
             if (messageTimer) {
                 clearTimeout(messageTimer);
                 messageTimer = null;
             }
 
             messageText.innerHTML = message; 
-            
-            // ★ 修正: はみ出し防止 (max-h) と h-full
             messageContainer.className = 'p-4 h-full border rounded-lg max-h-48 overflow-y-auto'; 
             
             switch(type) {
                 case 'error': 
                     messageContainer.classList.add('bg-red-100', 'border-red-400', 'text-red-700');
-                    // エラーは自動で消さない
                     break;
                 case 'warning': 
                     messageContainer.classList.add('bg-yellow-100', 'border-yellow-400', 'text-yellow-700');
-                    messageTimer = setTimeout(hideMessage, 7000); // 7秒
+                    messageTimer = setTimeout(hideMessage, 7000); 
                     break;
-                default: // 'info' や 'success'
+                default: 
                     messageContainer.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
-                    messageTimer = setTimeout(hideMessage, 4000); // 4秒
+                    messageTimer = setTimeout(hideMessage, 4000); 
             }
             messageContainer.classList.remove('hidden');
             
-            // ★ 新規: メッセージ表示時に <details> を開く
             if (dataControlsDetails) {
                 dataControlsDetails.open = true;
             }
             
-            // ★ 新規: メッセージが画面外でも見えるように、その場所へスクロール
             messageContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        // ★ 修正: hideMessage 関数 (タイマーリセット)
         function hideMessage(){ 
-            // タイマーが残っていればクリア
             if (messageTimer) {
                 clearTimeout(messageTimer);
                 messageTimer = null;
@@ -1176,7 +1234,21 @@ https://maps.app.goo.gl/..."></textarea>
             messageContainer.classList.add('hidden');
         }
 
+        // ★★★ 変更: getCurrentState に eventInfo を追加 ★★★
         function getCurrentState(){ 
+            // 状態保存の直前にDOMから最新の値を取得
+            parkingInfo = {
+                groundName: groundNameEl.value,
+                designated: { name: parkingDesignatedNameEl.value, limit: parseInt(parkingDesignatedLimitEl.value, 10) || 999, memo: parkingDesignatedMemoEl.value },
+                other: { name: parkingOtherNameEl.value, memo: parkingOtherMemoEl.value }
+            };
+            eventInfo = {
+                date: eventDateEl.value,
+                name: eventNameEl.value,
+                timeline: eventTimelineEl.value,
+                notes: eventNotesEl.value
+            };
+            
             return { 
                 selectedParticipantIds: Array.from(selectedParticipantIds), 
                 selectedCarIds: Array.from(selectedCarIds), 
@@ -1185,9 +1257,12 @@ https://maps.app.goo.gl/..."></textarea>
                 excludedParticipantIds: Array.from(excludedParticipantIds), 
                 participantData: Array.from(participantData.entries()), 
                 currentAssignments: currentAssignments,
-                parkingInfo: parkingInfo 
+                parkingInfo: parkingInfo, 
+                eventInfo: eventInfo // ★ 新規
             };
         }
+        
+        // ★★★ 変更: restoreState に eventInfo を追加 ★★★
         function restoreState(state){ 
             selectedParticipantIds = new Set(state.selectedParticipantIds || []); 
             selectedCarIds = new Set(state.selectedCarIds || []); 
@@ -1197,6 +1272,7 @@ https://maps.app.goo.gl/..."></textarea>
             participantData = new Map(state.participantData || []); 
             if (participantData.size === 0) { initializeParticipantData(); }
             
+            // 駐車場情報
             parkingInfo = state.parkingInfo || { groundName: '', designated: { name: '', limit: 0, memo: '' }, other: { name: '', memo: '' } };
             groundNameEl.value = parkingInfo.groundName;
             parkingDesignatedNameEl.value = parkingInfo.designated.name;
@@ -1204,6 +1280,13 @@ https://maps.app.goo.gl/..."></textarea>
             parkingDesignatedMemoEl.value = parkingInfo.designated.memo;
             parkingOtherNameEl.value = parkingInfo.other.name;
             parkingOtherMemoEl.value = parkingInfo.other.memo;
+
+            // ★ 新規: イベント情報
+            eventInfo = state.eventInfo || { date: '', name: '', timeline: '', notes: '' };
+            eventDateEl.value = eventInfo.date;
+            eventNameEl.value = eventInfo.name;
+            eventTimelineEl.value = eventInfo.timeline;
+            eventNotesEl.value = eventInfo.notes;
 
             currentAssignments = state.currentAssignments || [];
             if (currentAssignments.length > 0) {
@@ -1235,7 +1318,9 @@ https://maps.app.goo.gl/..."></textarea>
         }
 
         async function handleSaveStateToDB() {
-            const defaultName = `状態 ${new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}`;
+            // ★★★ 変更: 保存名のデフォルトをイベント名から取得 ★★★
+            const eventName = eventDateEl.value || eventNameEl.value;
+            const defaultName = eventName ? eventName : `状態 ${new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}`;
             const name = prompt("保存する状態の名称を入力してください:", defaultName);
             if (!name) {
                 showMessage('保存がキャンセルされました。', 'warning');
@@ -1243,7 +1328,7 @@ https://maps.app.goo.gl/..."></textarea>
             }
 
             try {
-                const state = getCurrentState();
+                const state = getCurrentState(); // ★ ここでDOMから最新値が取得される
                 await db.saveState(state, name); 
                 await loadSavedStatesList(); 
                 showMessage(`状態「${name}」をDBに保存しました。`, 'info');
@@ -1263,7 +1348,7 @@ https://maps.app.goo.gl/..."></textarea>
                 const savedState = await db.getState(id);
                 if (savedState) {
                     await loadMasterDataFromDB();
-                    restoreState(savedState.state);
+                    restoreState(savedState.state); // ★ ここでDOMに値がセットされる
                     renderParticipantList(); 
                     renderCarList(); 
                     renderExclusionList(); 
@@ -1437,34 +1522,75 @@ https://maps.app.goo.gl/..."></textarea>
              if (currentAssignments.length === 0) { showMessage('テキスト出力する結果がありません。先に「割り当て実行」を押してください。', 'error'); return; } textOutputContainer.classList.toggle('hidden'); if (!textOutputContainer.classList.contains('hidden')) { updateTextOutput(); }
         }
         
+        // ★★★ 変更: updateTextOutput を新しいフォーマットに変更 ★★★
         function updateTextOutput(){ 
             if (currentAssignments.length === 0) { textOutputEl.value = ''; return; } 
             
-            let outputLines = ["# 出力結果\n"];
-
-            if (parkingInfo.groundName) {
-                outputLines.push(`■ ${parkingInfo.groundName}\n`);
-            }
+            // eventInfo と parkingInfo は、 handleAssignment() でグローバル変数が更新されている前提
+            // (もし結果表示の前にテキスト出力を押された場合に備え、DOMからも取得)
+            const currentEventInfo = {
+                date: eventDateEl.value || eventInfo.date,
+                name: eventNameEl.value || eventInfo.name,
+                timeline: eventTimelineEl.value || eventInfo.timeline,
+                notes: eventNotesEl.value || eventInfo.notes
+            };
+            const currentParkingInfo = {
+                groundName: groundNameEl.value || parkingInfo.groundName,
+                designated: {
+                    name: parkingDesignatedNameEl.value || parkingInfo.designated.name || '指定駐車場',
+                    limit: parseInt(parkingDesignatedLimitEl.value, 10) || parkingInfo.designated.limit || 999,
+                    memo: parkingDesignatedMemoEl.value || parkingInfo.designated.memo || ''
+                },
+                other: {
+                    name: parkingOtherNameEl.value || parkingInfo.other.name || '指定駐車場以外',
+                    memo: parkingOtherMemoEl.value || parkingInfo.other.memo || ''
+                }
+            };
             
+            let outputLines = [];
+
+            // 1. イベント日 イベント名@場所
+            const groundName = currentParkingInfo.groundName ? `@${currentParkingInfo.groundName}` : '';
+            outputLines.push(`${currentEventInfo.date || '（日付未入力）'} ${currentEventInfo.name || '（イベント名未入力）'}${groundName}`);
+            outputLines.push(''); // 空行
+
+            // 2. イベントタイムライン
+            if (currentEventInfo.timeline) {
+                outputLines.push(currentEventInfo.timeline);
+                outputLines.push(''); // 空行
+            }
+
+            // 3. 指定駐車場
             const designatedCars = currentAssignments.filter(c => c.assignedParking === 'designated');
-            const dInfo = parkingInfo.designated;
-            outputLines.push(`□ ${dInfo.name} (${dInfo.limit > 0 ? dInfo.limit + '台' : '台数制限なし'})`);
-            if (dInfo.memo) outputLines.push(`${dInfo.memo.replace(/^/gm, '　')}`); 
+            const dInfo = currentParkingInfo.designated;
+            const dLimit = (dInfo.limit && dInfo.limit < 999) ? `(※台数制限${dInfo.limit}台)` : '';
+            
+            outputLines.push(`◆${dInfo.name} ${dLimit}`);
+            // 備考 (：でプレフィックス)
+            if (dInfo.memo) {
+                outputLines.push(dInfo.memo.replace(/^/gm, '：')); 
+            }
+            // 配車情報 (・でプレフィックス)
             designatedCars.forEach(car => {
                 outputLines.push(`・${getCarTextLine(car)}`);
             });
             
+            // 4. 指定以外駐車場
             const otherCars = currentAssignments.filter(c => c.assignedParking === 'other');
             if (otherCars.length > 0) {
-                 const oInfo = parkingInfo.other;
-                 outputLines.push('\n-------');
-                 outputLines.push(`□ ${oInfo.name}`);
-                 if (oInfo.memo) outputLines.push(`${oInfo.memo.replace(/^/gm, '　')}`); 
+                 outputLines.push(''); // 空行
+                 const oInfo = currentParkingInfo.other;
+                 outputLines.push(`◆${oInfo.name}`);
+                 if (oInfo.memo) {
+                    outputLines.push(oInfo.memo.replace(/^/gm, '：')); 
+                 }
                  otherCars.forEach(car => {
                      outputLines.push(`・${getCarTextLine(car)}`);
                  });
             }
             
+            // 5. 別便 (出力イメージに含まない)
+            /*
             const excludedCar = currentAssignments.find(car => car.id === 'excluded-car');
             if (excludedCar && excludedCar.members.length > 0) {
                  outputLines.push('\n□別便');
@@ -1474,6 +1600,14 @@ https://maps.app.goo.gl/..."></textarea>
                      const memo = (participantData.get(p.id)?.memo || '').trim();
                      outputLines.push(name + (memo ? ` [${memo}]` : '')); 
                  }); 
+            }
+            */
+
+            // 6. その他特記事項
+            if (currentEventInfo.notes) {
+                outputLines.push(''); // 空行
+                outputLines.push('◆その他');
+                outputLines.push(currentEventInfo.notes);
             }
 
             textOutputEl.value = outputLines.join('\n');
