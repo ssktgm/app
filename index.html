@@ -798,7 +798,7 @@ https://maps.app.goo.gl/..."></textarea>
             // ★★★ 変更: 備考のプレフィックスを「：」に ★★★
             section.innerHTML = `
                 <h3 class="text-lg font-semibold text-gray-800 mb-1">${titleHtml}</h3>
-                <p class="text-sm text-gray-600 mb-4 ml-4 whitespace-pre-line">${info.memo.replace(/^/gm, '：')}</p>
+                <p class="text-sm text-gray-600 mb-4 ml-4 whitespace-pre-line">${info.memo.replace(/^/gm, '')}</p>
                 <div class="results-grid-layout">
                     ${cars.map(car => createCarCardHtml(car)).join('')}
                 </div>
@@ -1625,7 +1625,7 @@ https://maps.app.goo.gl/..."></textarea>
                  const oInfo = currentParkingInfo.other;
                  outputLines.push(`◆${oInfo.name}`);
                  if (oInfo.memo) {
-                    outputLines.push(oInfo.memo.replace(/^/gm, '：')); 
+                    outputLines.push(oInfo.memo.replace(/^/gm, '')); 
                  }
                  otherCars.forEach(car => {
                      outputLines.push(`・${getCarTextLine(car)}`);
