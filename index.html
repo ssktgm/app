@@ -1318,9 +1318,52 @@ https://maps.app.goo.gl/..."></textarea>
         }
 
         async function handleSaveStateToDB() {
-            // ★★★ 変更: 保存名のデフォルトをイベント名から取得 ★★★
-            const eventName = eventDateEl.value || eventNameEl.value;
-            const defaultName = eventName ? eventName : `状態 ${new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}`;
+            // ★★★ 修正: 保存名のデフォルトを「イベント日(yyyymmdd)_イベント名」形式に変更 ★★★
+            
+            let dateStr = '';
+            const eventDateInput = eventDateEl.value; // 例: "2025/11/3(祝)" or "11/3"
+
+            if (eventDateInput) {
+                // (祝) や (土) などの括弧書き、空白を削除
+                let cleanDateInput = eventDateInput.replace(/[(（].*[)）]|\s/g, '').trim(); 
+                
+                // / で分割
+                const parts = cleanDateInput.split('/');
+                
+                let year, month, day;
+
+                try {
+                    if (parts.length === 3) { // "2025/11/3"
+                        year = parseInt(parts[0], 10);
+                        month = parseInt(parts[1], 10);
+                        day = parseInt(parts[2], 10);
+                    } else if (parts.length === 2) { // "11/3"
+                        year = new Date().getFullYear(); // 今年を使う
+                        month = parseInt(parts[0], 10);
+                        day = parseInt(parts[1], 10);
+                    }
+                    
+                    if (year && month && day && !isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                        // yyyymmdd 形式にフォーマット (padStart でゼロ埋め)
+                        dateStr = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
+                    }
+
+                } catch(e) {
+                    // パースエラー時は何もしない (dateStrは空のまま)
+                    console.warn("日付のパースに失敗:", e);
+                }
+            }
+            
+            // 日付が取れなかった場合のフォールバック (今日の日付)
+            if (!dateStr) {
+                const today = new Date();
+                dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+            }
+
+            const eventNameInput = eventNameEl.value || '（イベント名未入力）';
+            
+            const defaultName = `${dateStr}_${eventNameInput}`;
+            
             const name = prompt("保存する状態の名称を入力してください:", defaultName);
             if (!name) {
                 showMessage('保存がキャンセルされました。', 'warning');
