@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>配車調整アプリ (DnD修正版 v2.2)</title>
+    <title>配車調整アプリ (DnD修正版 v2.3)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SortableJS ライブラリ -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -63,7 +63,7 @@
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         
         <div class="flex justify-between items-center mb-4 border-b pb-2">
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">配車調整 <span class="text-sm font-normal text-gray-500 ml-2">Ver.2.2</span></h1>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">配車調整 <span class="text-sm font-normal text-gray-500 ml-2">Ver.2.3 (Fix)</span></h1>
             <a href="./manual.html" target="_blank" class="text-sm bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-lg shadow transition duration-200">マニュアル</a>
         </div>
 
@@ -358,17 +358,55 @@
             });
         }
 
+        // ★ 修正: ボタンをJSで生成してイベントハンドラを直接設定
         function renderParticipantList() {
             els.participantList.innerHTML = '';
             FAMILIES.forEach(family => {
                 const details = document.createElement('details');
                 details.className = 'bg-gray-50 rounded border group';
                 details.open = true;
+                
                 const summary = document.createElement('summary');
                 summary.className = 'p-3 cursor-pointer select-none flex justify-between items-center outline-none';
-                summary.innerHTML = `<span class="font-semibold">${family.familyName}</span><div class="space-x-1"><button type="button" data-family="${family.familyName}" data-action="check-all" class="text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded">全参加</button><button type="button" data-family="${family.familyName}" data-action="uncheck-all" class="text-xs bg-gray-400 hover:bg-gray-500 text-white py-1 px-2 rounded">全解除</button></div>`;
+                
+                const titleSpan = document.createElement('span');
+                titleSpan.className = 'font-semibold';
+                titleSpan.textContent = family.familyName;
+                
+                const btnsDiv = document.createElement('div');
+                btnsDiv.className = 'space-x-1';
+                
+                // 全参加ボタン
+                const btnCheck = document.createElement('button');
+                btnCheck.type = 'button';
+                btnCheck.className = 'text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded';
+                btnCheck.textContent = '全参加';
+                btnCheck.onclick = (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    family.members.forEach(m => selectedParticipantIds.add(m.id));
+                    renderParticipantList(); renderExclusionList(); updateStatusCounter();
+                };
+                
+                // 全解除ボタン
+                const btnUncheck = document.createElement('button');
+                btnUncheck.type = 'button';
+                btnUncheck.className = 'text-xs bg-gray-400 hover:bg-gray-500 text-white py-1 px-2 rounded';
+                btnUncheck.textContent = '全解除';
+                btnUncheck.onclick = (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    family.members.forEach(m => { selectedParticipantIds.delete(m.id); excludedParticipantIds.delete(m.id); });
+                    renderParticipantList(); renderExclusionList(); updateStatusCounter();
+                };
+
+                btnsDiv.appendChild(btnCheck);
+                btnsDiv.appendChild(btnUncheck);
+                
+                summary.appendChild(titleSpan);
+                summary.appendChild(btnsDiv);
+                
                 const listDiv = document.createElement('div');
                 listDiv.className = 'p-2 space-y-2 border-t';
+                
                 family.members.forEach(p => {
                     const isChecked = selectedParticipantIds.has(p.id);
                     const div = document.createElement('div');
@@ -376,13 +414,18 @@
                     const data = participantData.get(p.id) || {};
                     const disabled = !isChecked ? 'disabled' : '';
                     const opacity = !isChecked ? 'opacity-50' : '';
+                    
+                    // HTML文字列生成は複雑なためinnerHTMLを利用するが、チェックボックスのイベントは別途delegationで拾う
                     let extraInputs = p.isFlagTarget ? 
                         `<div class="mt-1 grid grid-cols-3 gap-1 ${opacity}" id="data-${p.id}"><input type="text" data-id="${p.id}" data-type="grade" value="${data.grade}" placeholder="学年" class="text-xs p-1 border rounded" ${disabled}><input type="text" data-id="${p.id}" data-type="school" value="${data.school}" placeholder="学校" class="text-xs p-1 border rounded" ${disabled}><input type="text" data-id="${p.id}" data-type="memo" value="${data.memo}" placeholder="備考" class="text-xs p-1 border rounded" ${disabled}></div>` : 
                         `<div class="mt-1 ${opacity}" id="data-${p.id}"><input type="text" data-id="${p.id}" data-type="memo" value="${data.memo}" placeholder="備考" class="text-xs p-1 border rounded w-full" ${disabled}></div>`;
                     div.innerHTML = `<div class="flex items-center"><input type="checkbox" id="p-${p.id}" data-id="${p.id}" class="participant-check mr-2 h-4 w-4 text-blue-600 rounded" ${isChecked ? 'checked' : ''}><label for="p-${p.id}" class="text-sm text-gray-700 font-medium select-none cursor-pointer">${p.name} (${p.type})</label></div>${extraInputs}`;
                     listDiv.appendChild(div);
                 });
-                details.appendChild(summary); details.appendChild(listDiv); els.participantList.appendChild(details);
+                
+                details.appendChild(summary); 
+                details.appendChild(listDiv); 
+                els.participantList.appendChild(details);
             });
         }
 
@@ -430,21 +473,7 @@
 
         function setupEventListeners() {
             els.participantList.addEventListener('click', e => {
-                const btn = e.target.closest('button[data-action]');
-                if (btn) {
-                    // ★ 追加: summaryの開閉イベントをキャンセル
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    const familyName = btn.dataset.family;
-                    const family = FAMILIES.find(f => f.familyName === familyName);
-                    if (family) {
-                        const shouldCheck = btn.dataset.action === 'check-all';
-                        family.members.forEach(m => { if(shouldCheck) selectedParticipantIds.add(m.id); else selectedParticipantIds.delete(m.id); });
-                        renderParticipantList(); renderExclusionList(); updateStatusCounter();
-                    }
-                    return;
-                }
+                // ボタンイベントは直接アタッチしたのでここでは処理しない
                 if (e.target.classList.contains('participant-check')) {
                     const id = e.target.dataset.id;
                     if (e.target.checked) selectedParticipantIds.add(id);
@@ -670,27 +699,33 @@
                 }
                 const car = currentAssignments.find(c => c.id === carId);
                 if (!car) return;
+                
+                // DOMからドライバーを取得して更新
                 const drZone = card.querySelector('.driver-dropzone');
                 const drLi = drZone ? drZone.querySelector('li') : null;
                 if (drLi) {
                     const pId = drLi.dataset.id;
                     car.driver = ALL_PARTICIPANTS_FLAT.find(p => p.id === pId);
-                    excludedParticipantIds.delete(pId); 
+                    excludedParticipantIds.delete(pId); // 別便から移動してきた場合は削除
                     drLi.className = drLi.className.replace('bg-white text-gray-800 border', 'bg-blue-600 text-white');
                 } else {
                     car.driver = null;
                 }
+                
+                // DOMからメンバーを取得して更新
                 const memList = card.querySelector('.members-dropzone');
                 const newMembers = [];
-                memList.querySelectorAll('li').forEach(li => {
-                    const pId = li.dataset.id;
-                    const p = ALL_PARTICIPANTS_FLAT.find(x => x.id === pId);
-                    if(p) {
-                        newMembers.push(p);
-                        excludedParticipantIds.delete(pId); 
-                        li.className = li.className.replace('bg-blue-600 text-white', 'bg-white text-gray-800 border');
-                    }
-                });
+                if(memList) {
+                    memList.querySelectorAll('li').forEach(li => {
+                        const pId = li.dataset.id;
+                        const p = ALL_PARTICIPANTS_FLAT.find(x => x.id === pId);
+                        if(p) {
+                            newMembers.push(p);
+                            excludedParticipantIds.delete(pId); // 別便から移動してきた場合は削除
+                            li.className = li.className.replace('bg-blue-600 text-white', 'bg-white text-gray-800 border');
+                        }
+                    });
+                }
                 car.members = newMembers;
             });
         }
