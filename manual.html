@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,39 +10,60 @@
         body {
             font-feature-settings: "palt";
         }
+
         h2 {
-            border-bottom: 2px solid #60A5FA; /* blue-400 */
+            border-bottom: 2px solid #60A5FA;
+            /* blue-400 */
             padding-bottom: 8px;
-            margin-top: 2.5rem; /* mt-10 */
-            margin-bottom: 1rem; /* mb-4 */
+            margin-top: 2.5rem;
+            /* mt-10 */
+            margin-bottom: 1rem;
+            /* mb-4 */
         }
+
         h3 {
-            border-left: 5px solid #93C5FD; /* blue-300 */
+            border-left: 5px solid #93C5FD;
+            /* blue-300 */
             padding-left: 10px;
-            margin-top: 2rem; /* mt-8 */
-            margin-bottom: 0.75rem; /* mb-3 */
+            margin-top: 2rem;
+            /* mt-8 */
+            margin-bottom: 0.75rem;
+            /* mb-3 */
         }
+
         .step {
-            background-color: #EFF6FF; /* blue-50 */
-            border: 1px solid #BFDBFE; /* blue-200 */
-            border-radius: 0.5rem; /* rounded-lg */
-            padding: 1rem; /* p-4 */
-            margin-bottom: 1rem; /* mb-4 */
+            background-color: #EFF6FF;
+            /* blue-50 */
+            border: 1px solid #BFDBFE;
+            /* blue-200 */
+            border-radius: 0.5rem;
+            /* rounded-lg */
+            padding: 1rem;
+            /* p-4 */
+            margin-bottom: 1rem;
+            /* mb-4 */
         }
+
         .caution {
-            background-color: #FFFBEB; /* yellow-50 */
-            border: 1px solid #FDE68A; /* yellow-200 */
-            color: #B45309; /* yellow-700 */
-            padding: 1rem; /* p-4 */
-            border-radius: 0.5rem; /* rounded-lg */
+            background-color: #FFFBEB;
+            /* yellow-50 */
+            border: 1px solid #FDE68A;
+            /* yellow-200 */
+            color: #B45309;
+            /* yellow-700 */
+            padding: 1rem;
+            /* p-4 */
+            border-radius: 0.5rem;
+            /* rounded-lg */
         }
     </style>
 </head>
+
 <body class="bg-gray-100 font-sans leading-relaxed text-gray-800">
 
     <div class="container mx-auto p-4 md:p-10 max-w-3xl bg-white shadow-lg rounded-lg my-10">
         <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">
-            配車調整アプリ 利用マニュアル
+            配車調整アプリ 利用マニュアル <span class="text-2xl font-normal text-gray-500">v3.0</span>
         </h1>
 
         <section class="mb-10 text-center">
@@ -75,7 +97,37 @@
         </p>
 
         <div class="step">
-            <h3 class="text-xl font-bold mt-0">ステップ1： 参加者を選択</h3>
+            <h3 class="text-xl font-bold mt-0">ステップ1： イベント日とイベント名</h3>
+            <p>
+                いつ、何のイベントかを入力します。ここで入力した内容は、割り当て結果のタイトルとして表示されます。
+            </p>
+        </div>
+
+        <div class="step">
+            <h3 class="text-xl font-bold mt-0">ステップ2： タイムライン・特記事項</h3>
+            <p>
+                集合時間や出発時間などのスケジュール（タイムライン）や、持ち物・注意事項などの特記事項を入力します。<br>
+                これらは配車計算には影響しませんが、テキスト出力時に一緒に記載され、連絡用として役立ちます。
+            </p>
+        </div>
+
+        <div class="step">
+            <h3 class="text-xl font-bold mt-0">ステップ3： グラウンド・駐車場情報</h3>
+            <p>
+                目的地の情報を入力します。
+            </p>
+            <ul class="list-disc list-inside mt-2 ml-4 space-y-1">
+                <li><strong>グラウンド名:</strong> 「SF (ホーム)」や「〇〇小学校」など、場所の名前を入力します。</li>
+                <li><strong>指定駐車場:</strong> チームの車を停めるよう指定された駐車場の名前（例: A面）、台数制限、地図URLなどの備考を入力します。</li>
+                <li><strong>指定以外の駐車場:</strong> それ以外の車を停める場所（例: 丘の上）の情報を入力します。</li>
+            </ul>
+            <p class="mt-2 text-sm text-gray-600">
+                ※よく使うグラウンド情報は、管理メニューの「② グラウンド・駐車場」で保存・呼び出しが可能です。
+            </p>
+        </div>
+
+        <div class="step">
+            <h3 class="text-xl font-bold mt-0">ステップ4： 参加者を選択</h3>
             <p>
                 「家族・グループ」ごとに、今回のイベントに参加する人のチェックボックスを「オン」にします。
             </p>
@@ -86,21 +138,22 @@
         </div>
 
         <div class="step">
-            <h3 class="text-xl font-bold mt-0">ステップ2： 車とドライバーを選択</h3>
+            <h3 class="text-xl font-bold mt-0">ステップ5： 車とドライバーを選択</h3>
             <p>
                 今回出す車にチェックを「オン」にします。<br>
                 チェックを入れると、追加の選択肢が表示されます。
             </p>
             <ul class="list-disc list-inside mt-2 ml-4 space-y-1">
                 <li><strong>ドライバー:</strong> 運転する人を必ず選んでください。</li>
-                <li><strong>荷物あり:</strong> 旗やボール、テントなどの大きな荷物を積む場合、チェックを入れます。チェックを入れると、安全のため、その車の定員が自動的に「2名（ドライバー＋1名）」として計算されます。</li>
+                <li><strong>荷物あり:</strong>
+                    旗やボール、テントなどの大きな荷物を積む場合、チェックを入れます。チェックを入れると、安全のため、その車の定員が自動的に「2名（ドライバー＋1名）」として計算されます。</li>
             </ul>
         </div>
 
         <div class="step">
-            <h3 class="text-xl font-bold mt-0">ステップ3： 別便の人を除外</h3>
+            <h3 class="text-xl font-bold mt-0">ステップ6： 別便の人を除外</h3>
             <p>
-                ステップ1で「参加する」にチェックした人（ドライバーを除く）のうち、
+                ステップ4で「参加する」にチェックした人（ドライバーを除く）のうち、
                 「現地集合」や「自転車で行く」など、配車が不要な人がいれば、ここでチェックを「オン」にします。
             </p>
             <p class="mt-2 text-sm text-gray-600">
@@ -109,39 +162,19 @@
         </div>
 
         <div class="step">
-            <h3 class="text-xl font-bold mt-0">ステップ4： グラウンド・駐車場と割り当て実行</h3>
+            <h3 class="text-xl font-bold mt-0">ステップ7： 割り当て実行と結果（手動調整）</h3>
             <p>
-                目的地の情報を入力し、「割り当て実行」ボタンを押します。
+                すべての入力が終わったら、<span class="bg-blue-600 text-white py-1 px-2 rounded-md">割り当て実行</span> ボタンを押してください。<br>
+                自動で割り当てられた結果がカード形式で表示されます。
             </p>
-            <ul class="list-disc list-inside mt-2 ml-4 space-y-1">
-                <li><strong>グラウンド名:</strong> 「SF (ホーム)」や「〇〇小学校」など、場所の名前を入力します。</li>
-                <li><strong>指定駐車場:</strong> チームの車を停めるよう指定された駐車場の名前（例: A面）、台数制限、地図URLなどの備考を入力します。</li>
-                <li><strong>指定以外の駐車場:</strong> それ以外の車を停める場所（例: 丘の上）の情報を入力します。</li>
-            </ul>
-            <p class="mt-3 font-bold">
-                入力が終わったら、<span class="bg-blue-600 text-white py-1 px-2 rounded-md">割り当て実行</span> ボタンを押してください。
-            </p>
-        </div>
 
-        <div class="step">
-            <h3 class="text-xl font-bold mt-0">ステップ5： 割り当て結果（と手動調整）</h3>
-            <p>
-                自動で割り当てられた結果がカード形式で表示されます。<br>
-                結果が気に入らない場合は、手動で入れ替えることができます。
-            </p>
-            <h4 class="font-semibold mt-3 mb-1">■ 人を入れ替える方法</h4>
-            <ol class="list-decimal list-inside ml-4 space-y-1">
-                <li>入れ替えたい1人目（例: Aさん）の横にあるチェックボックスを「オン」にします。（薄い青色になります）</li>
-                <li>入れ替えたい2人目（例: Bさん、または「空席」）のチェックボックスを「オン」にします。</li>
-                <li>瞬時にAさんとBさんが入れ替わります。</li>
-            </ol>
-            <h4 class="font-semibold mt-3 mb-1">■ 車の駐車場を入れ替える方法</h4>
-            <ol class="list-decimal list-inside ml-4 space-y-1">
-                <li>入れ替えたい1台目（例: 小高カー）の「車の名前」の横にあるチェックボックスを「オン」にします。</li>
-                <li>入れ替えたい2台目（例: 難波カー）の「車の名前」の横にあるチェックボックスを「オン」にします。</li>
-                <li>2台の停める駐車場（指定／指定以外）が入れ替わります。</li>
-            </ol>
-            
+            <h4 class="font-semibold mt-3 mb-1">■ 手動調整（入れ替え）</h4>
+            <p>結果が気に入らない場合は、チェックボックスを使って手動で入れ替えることができます。</p>
+            <ul class="list-disc list-inside ml-4 space-y-1">
+                <li><strong>人の入れ替え:</strong> 入れ替えたい2人（または空席）のチェックボックスをオンにすると入れ替わります。</li>
+                <li><strong>車の入れ替え:</strong> 入れ替えたい2台の車の名前横のチェックボックスをオンにすると、駐車場（指定／指定以外）が入れ替わります。</li>
+            </ul>
+
             <h4 class="font-semibold mt-3 mb-1">■ テキスト出力</h4>
             <p class="ml-4">
                 「テキスト出力」ボタンを押すと、LINEなどで連絡しやすい形式のテキストが表示されます。「コピー」ボタンでコピーして使えます。
@@ -172,7 +205,8 @@
             </p>
             <ul class="list-disc list-inside mt-2 ml-4 space-y-1">
                 <li><span class="font-bold text-blue-700">「保存」:</span> 現在の駐車場データを保存します。（名前をつけて保存できます）</li>
-                <li><span class="font-bold text-gray-700">「グラウンド・駐車場一覧...」:</span> 過去に保存した駐車場データを選んで「読込」ボタンで入力欄に復元します。</li>
+                <li><span class="font-bold text-gray-700">「グラウンド・駐車場一覧...」:</span> 過去に保存した駐車場データを選んで「読込」ボタンで入力欄に復元します。
+                </li>
                 <li><span class="font-bold text-red-700">「削除」:</span> 一覧で選択した保存データを削除します。</li>
             </ul>
             <p class="mt-3 text-sm text-gray-600">
@@ -191,7 +225,8 @@
         <div class="step">
             <h3 class="text-xl font-bold mt-0">④ アプリ管理</h3>
             <ul class="list-disc list-inside mt-2 ml-4 space-y-1">
-                <li><span class="font-bold text-gray-700">「マスター編集」:</span> 参加者や車のマスターデータを編集するページ（master.html）に移動します。</li>
+                <li><span class="font-bold text-gray-700">「マスター編集」:</span> 参加者や車のマスターデータを編集するページ（master.html）に移動します。
+                </li>
                 <li>
                     <span class="font-bold text-red-700">「全データリセット」:</span><br>
                     <strong>！注意！</strong> このボタンを押すと、マスターデータ、保存した作業、保存した駐車場など、ブラウザに保存したすべてのデータが消え、アプリが最初の状態に戻ります。<br>
@@ -210,7 +245,8 @@
                 <li><strong>家族・グループを追加:</strong> 新しい家族（例: 鈴木家）やグループ（例: コーチ）を追加します。</li>
                 <li><strong>メンバーを追加:</strong> 家族カードの中にあるボタンで、その家族に新しい人（例: 鈴木父）を追加します。</li>
                 <li><strong>名前・タイプの変更:</strong> 表示されている入力欄を直接書き換えると、自動で保存されます。</li>
-                <li><strong>同乗優先:</strong> チェックをオンにすると、メインアプリで「学年」「学校」などの入力欄が表示され、割り当て時に考慮されるようになります。 <span class="font-bold">選手や当番対象の兄弟はオン</span>に、保護者やスタッフはオフにするのがオススメです。</li>
+                <li><strong>同乗優先:</strong> チェックをオンにすると、メインアプリで「学年」「学校」などの入力欄が表示され、割り当て時に考慮されるようになります。 <span
+                        class="font-bold">選手や当番対象の兄弟はオン</span>に、保護者やスタッフはオフにするのがオススメです。</li>
                 <li><strong>並び替え (▲ ▼):</strong> 家族・グループの表示順を入れ替えます。メインアプリのステップ1の表示順もこれと同じになります。</li>
             </ul>
         </div>
@@ -222,17 +258,17 @@
                 <li><strong>並び替え (▲ ▼):</strong> 車の表示順を入れ替えます。メインアプリのステップ2の表示順もこれと同じになります。</li>
             </ul>
         </div>
-        
+
         <div class="step">
-             <h3 class="text-xl font-bold mt-0">駐車場（グラウンド）データの編集</h3>
-             <p>
-                 メインアプリの管理メニューで保存した駐車場・グラウンドのデータをここで一覧表示・管理できます。
-             </p>
-             <ul class="list-disc list-inside mt-2 ml-4 space-y-1">
-                 <li><strong>保存名、グラウンド名などの変更:</strong> 各入力欄を直接書き換えると、自動で保存されます。</li>
-                 <li><strong>新しい駐車場を追加:</strong> 空の駐車場データを作成し、編集できます。</li>
-                 <li><strong>削除:</strong> 不要になった駐車場データを削除します。</li>
-             </ul>
+            <h3 class="text-xl font-bold mt-0">駐車場（グラウンド）データの編集</h3>
+            <p>
+                メインアプリの管理メニューで保存した駐車場・グラウンドのデータをここで一覧表示・管理できます。
+            </p>
+            <ul class="list-disc list-inside mt-2 ml-4 space-y-1">
+                <li><strong>保存名、グラウンド名などの変更:</strong> 各入力欄を直接書き換えると、自動で保存されます。</li>
+                <li><strong>新しい駐車場を追加:</strong> 空の駐車場データを作成し、編集できます。</li>
+                <li><strong>削除:</strong> 不要になった駐車場データを削除します。</li>
+            </ul>
         </div>
         <div class="step caution">
             <h3 class="text-xl font-bold mt-0">マスターの保存 (JSON)</h3>
@@ -240,17 +276,20 @@
                 これが最も重要なバックアップ機能です。
             </p>
             <p class="mt-2">
-                編集が終わったら、必ず<span class="bg-blue-600 text-white py-1 px-2 rounded-md">マスターを保存 (JSON)</span> ボタンを押してください。<br>
+                編集が終わったら、必ず<span class="bg-blue-600 text-white py-1 px-2 rounded-md">マスターを保存 (JSON)</span>
+                ボタンを押してください。<br>
                 このファイルには、**家族・参加者**、**車**、そして**保存済みの駐車場データ**のすべてが含まれます。
                 <span class="font-bold">`car_assignment_master_....json`</span> というファイルがダウンロードされます。
             </p>
             <p class="mt-2">
                 このファイルをPCやGoogleドライブなど、安全な場所に保存しておけば、万が一ブラウザのデータが消えても、
-                <span class="bg-yellow-500 text-white py-1 px-2 rounded-md">マスターを読み込む (JSON)</span> ボタンからこのファイルを選ぶだけで、すべてのデータを元に戻せます。
+                <span class="bg-yellow-500 text-white py-1 px-2 rounded-md">マスターを読み込む (JSON)</span>
+                ボタンからこのファイルを選ぶだけで、すべてのデータを元に戻せます。
             </p>
         </div>
 
     </div>
 
 </body>
+
 </html>
