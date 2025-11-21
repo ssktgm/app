@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>配車調整アプリ (DnD修正版)</title>
+    <title>配車調整アプリ (DnD修正版 v2.2)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SortableJS ライブラリ -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -63,7 +63,7 @@
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         
         <div class="flex justify-between items-center mb-4 border-b pb-2">
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">配車調整 <span class="text-sm font-normal text-gray-500 ml-2">Ver.2.1 (Fix)</span></h1>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">配車調整 <span class="text-sm font-normal text-gray-500 ml-2">Ver.2.2</span></h1>
             <a href="./manual.html" target="_blank" class="text-sm bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-lg shadow transition duration-200">マニュアル</a>
         </div>
 
@@ -432,6 +432,10 @@
             els.participantList.addEventListener('click', e => {
                 const btn = e.target.closest('button[data-action]');
                 if (btn) {
+                    // ★ 追加: summaryの開閉イベントをキャンセル
+                    e.preventDefault();
+                    e.stopPropagation();
+
                     const familyName = btn.dataset.family;
                     const family = FAMILIES.find(f => f.familyName === familyName);
                     if (family) {
@@ -545,9 +549,7 @@
             groups.forEach(g => {
                 let groupCars = [];
                 if(g.key === 'excluded') {
-                     // 別便は仮想の車として1つだけ作る
                      const excludedMembers = ALL_PARTICIPANTS_FLAT.filter(p => excludedParticipantIds.has(p.id));
-                     // あふれた人も入れたいが、今回はexcludedParticipantIdsと同期させる
                      if (excludedMembers.length > 0) {
                          groupCars.push({ id: 'excluded_car', name: '別便', driver: null, members: excludedMembers, capacity: 999, baseCapacity: 999, isExcluded: true });
                      }
@@ -586,7 +588,6 @@
             const body = document.createElement('div');
             body.className = 'p-2 flex-1 flex flex-col gap-2';
 
-            // ドライバーエリア (別便の場合は非表示)
             if (!car.isExcluded) {
                 const driverZone = document.createElement('div');
                 driverZone.className = 'driver-dropzone min-h-[40px] border-2 border-dashed border-blue-200 rounded bg-blue-50 p-1';
@@ -616,49 +617,38 @@
             return li;
         }
 
-        // ★ 堅牢な初期化とイベント管理
         function initSortable() {
             const sharedGroup = 'shared_members';
-            
-            // ドライバーエリア
             document.querySelectorAll('.driver-dropzone').forEach(el => {
                 new Sortable(el, {
                     group: sharedGroup,
                     animation: 150,
-                    max: 1, // ドライバーは1人まで
-                    onEnd: handleDragEnd // ★ 全てこのイベントで同期する
+                    max: 1, 
+                    onEnd: handleDragEnd 
                 });
             });
-
-            // メンバーエリア
             document.querySelectorAll('.members-dropzone').forEach(el => {
                 const carId = el.dataset.carId;
                 const car = currentAssignments.find(c => c.id === carId);
                 const isExcluded = (carId === 'excluded_car');
-                // 定員計算 (ドライバー枠は別なので、ここはあくまで後部座席数)
                 const capacity = (isExcluded || !car) ? 999 : car.capacity;
 
                 new Sortable(el, {
                     group: sharedGroup,
                     animation: 150,
-                    // 定員チェック
                     onMove: function (evt) {
                         if (isExcluded) return true; 
-                        if (evt.to === evt.from) return true; // 自リスト内移動はOK
-                        if (evt.to.classList.contains('driver-dropzone')) return true; // ドライバー枠への移動はmax:1で制御
-                        
-                        // 移動先の現在の要素数を確認 (Sortableはドラッグ中の要素をDOMに追加していない場合もあるが、evt.to.childrenで確認)
+                        if (evt.to === evt.from) return true; 
+                        if (evt.to.classList.contains('driver-dropzone')) return true; 
                         const currentCount = evt.to.querySelectorAll('.draggable-item:not(.sortable-ghost)').length;
-                        // 今から1人入るので、 capacity <= currentCount だと溢れる
                         if (currentCount >= capacity) return false;
                         return true;
                     },
-                    onEnd: handleDragEnd // ★ 全てこのイベントで同期する
+                    onEnd: handleDragEnd 
                 });
             });
         }
 
-        // ★ 最重要: DOMの状態を元にデータを完全に同期する
         function handleDragEnd(evt) {
             syncDataFromDOM();
             updateTextOutput();
@@ -666,17 +656,10 @@
         }
 
         function syncDataFromDOM() {
-            // 1. 全カードを走査してデータを更新
             const cards = document.querySelectorAll('[data-car-id]');
             cards.forEach(card => {
                 const carId = card.dataset.carId;
-
-                // A. 別便の場合
                 if (carId === 'excluded_car') {
-                    // DOMにあるIDを正として excludedParticipantIds を再構築する手段もあるが、
-                    // 他の車から移動してきた人を追加し、ここにいない人を削除する必要がある。
-                    // 簡易実装: ここにある人を excludedParticipantIds に追加する処理だけ行う。
-                    // (削除処理は B.通常車のスキャンで行う)
                     const list = card.querySelector('.members-dropzone');
                     if(list) {
                         list.querySelectorAll('li').forEach(li => {
@@ -685,25 +668,18 @@
                     }
                     return;
                 }
-
-                // B. 通常車の場合
                 const car = currentAssignments.find(c => c.id === carId);
                 if (!car) return;
-
-                // ドライバー更新
                 const drZone = card.querySelector('.driver-dropzone');
                 const drLi = drZone ? drZone.querySelector('li') : null;
                 if (drLi) {
                     const pId = drLi.dataset.id;
                     car.driver = ALL_PARTICIPANTS_FLAT.find(p => p.id === pId);
-                    excludedParticipantIds.delete(pId); // 別便から消す
-                    // スタイル修正(青色に)
+                    excludedParticipantIds.delete(pId); 
                     drLi.className = drLi.className.replace('bg-white text-gray-800 border', 'bg-blue-600 text-white');
                 } else {
                     car.driver = null;
                 }
-
-                // メンバー更新
                 const memList = card.querySelector('.members-dropzone');
                 const newMembers = [];
                 memList.querySelectorAll('li').forEach(li => {
@@ -711,16 +687,12 @@
                     const p = ALL_PARTICIPANTS_FLAT.find(x => x.id === pId);
                     if(p) {
                         newMembers.push(p);
-                        excludedParticipantIds.delete(pId); // 別便から消す
-                        // スタイル修正(白色に)
+                        excludedParticipantIds.delete(pId); 
                         li.className = li.className.replace('bg-blue-600 text-white', 'bg-white text-gray-800 border');
                     }
                 });
                 car.members = newMembers;
             });
-            
-            // renderExclusionList はまだ更新しない (DnD画面と矛盾するため)
-            // データ上の整合性だけ保っておく
         }
 
         function updateTextOutput() {
@@ -729,22 +701,18 @@
             const ground = parkingInfo.groundName ? `@${parkingInfo.groundName}` : '';
             lines.push(`${eventInfo.date} ${eventInfo.name} ${ground}`);
             if(eventInfo.timeline) lines.push(`\n${eventInfo.timeline}`);
-
-            // 指定P
             const desCars = currentAssignments.filter(c => c.assignedParking === 'designated');
             if(desCars.length > 0) {
                 lines.push(`\n◆${parkingInfo.designated.name} (制限${parkingInfo.designated.limit}台)`);
                 if(parkingInfo.designated.memo) lines.push(parkingInfo.designated.memo);
                 desCars.forEach(c => lines.push(getCarLine(c)));
             }
-            // 指定外P
             const otherCars = currentAssignments.filter(c => c.assignedParking === 'other');
             if(otherCars.length > 0) {
                 lines.push(`\n◆${parkingInfo.other.name}`);
                 if(parkingInfo.other.memo) lines.push(parkingInfo.other.memo);
                 otherCars.forEach(c => lines.push(getCarLine(c)));
             }
-            // 別便
             const exIds = Array.from(excludedParticipantIds);
             if(exIds.length > 0) {
                  lines.push(`\n◆別便`);
@@ -753,7 +721,6 @@
                      if(p) lines.push(`・${p.name} ${getMemo(p.id)}`);
                  });
             }
-
             if(eventInfo.notes) lines.push(`\n◆その他\n${eventInfo.notes}`);
             els.textOutput.value = lines.join('\n');
         }
