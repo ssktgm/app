@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>配車調整アプリ (DnD修正版 v2.3)</title>
+    <title>配車調整アプリ (DnD修正版 v2.4)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SortableJS ライブラリ -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -63,7 +63,7 @@
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         
         <div class="flex justify-between items-center mb-4 border-b pb-2">
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">配車調整 <span class="text-sm font-normal text-gray-500 ml-2">Ver.2.3 (Fix)</span></h1>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">配車調整 <span class="text-sm font-normal text-gray-500 ml-2">Ver.2.4</span></h1>
             <a href="./manual.html" target="_blank" class="text-sm bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-lg shadow transition duration-200">マニュアル</a>
         </div>
 
@@ -358,7 +358,6 @@
             });
         }
 
-        // ★ 修正: ボタンをJSで生成してイベントハンドラを直接設定
         function renderParticipantList() {
             els.participantList.innerHTML = '';
             FAMILIES.forEach(family => {
@@ -376,7 +375,6 @@
                 const btnsDiv = document.createElement('div');
                 btnsDiv.className = 'space-x-1';
                 
-                // 全参加ボタン
                 const btnCheck = document.createElement('button');
                 btnCheck.type = 'button';
                 btnCheck.className = 'text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded';
@@ -387,7 +385,6 @@
                     renderParticipantList(); renderExclusionList(); updateStatusCounter();
                 };
                 
-                // 全解除ボタン
                 const btnUncheck = document.createElement('button');
                 btnUncheck.type = 'button';
                 btnUncheck.className = 'text-xs bg-gray-400 hover:bg-gray-500 text-white py-1 px-2 rounded';
@@ -400,7 +397,6 @@
 
                 btnsDiv.appendChild(btnCheck);
                 btnsDiv.appendChild(btnUncheck);
-                
                 summary.appendChild(titleSpan);
                 summary.appendChild(btnsDiv);
                 
@@ -415,7 +411,6 @@
                     const disabled = !isChecked ? 'disabled' : '';
                     const opacity = !isChecked ? 'opacity-50' : '';
                     
-                    // HTML文字列生成は複雑なためinnerHTMLを利用するが、チェックボックスのイベントは別途delegationで拾う
                     let extraInputs = p.isFlagTarget ? 
                         `<div class="mt-1 grid grid-cols-3 gap-1 ${opacity}" id="data-${p.id}"><input type="text" data-id="${p.id}" data-type="grade" value="${data.grade}" placeholder="学年" class="text-xs p-1 border rounded" ${disabled}><input type="text" data-id="${p.id}" data-type="school" value="${data.school}" placeholder="学校" class="text-xs p-1 border rounded" ${disabled}><input type="text" data-id="${p.id}" data-type="memo" value="${data.memo}" placeholder="備考" class="text-xs p-1 border rounded" ${disabled}></div>` : 
                         `<div class="mt-1 ${opacity}" id="data-${p.id}"><input type="text" data-id="${p.id}" data-type="memo" value="${data.memo}" placeholder="備考" class="text-xs p-1 border rounded w-full" ${disabled}></div>`;
@@ -434,13 +429,47 @@
             AVAILABLE_CARS_INFO.forEach(car => {
                 const isChecked = selectedCarIds.has(car.id);
                 const hasLuggage = selectedLuggage.has(car.id);
-                const driverId = selectedDrivers.get(car.id) || '';
+                
                 const family = FAMILIES.find(f => f.familyName === car.familyName);
                 const candidates = family ? family.members : ALL_PARTICIPANTS_FLAT;
-                const options = candidates.filter(p => p.type !== '選手' && p.type !== '兄弟').map(p => `<option value="${p.id}" ${driverId === p.id ? 'selected' : ''}>${p.name}</option>`).join('');
+                const driverOptions = candidates.filter(p => p.type !== '選手' && p.type !== '兄弟');
+
+                // ★ 自動ドライバー選択ロジック
+                if (family && isChecked && !selectedDrivers.has(car.id)) {
+                    const father = driverOptions.find(m => m.type === '保護者' && (m.name.includes('父') || m.name.includes('監督') || m.name.includes('夫')));
+                    const mother = driverOptions.find(m => m.type === '保護者' && (m.name.includes('母') || m.name.includes('妻')));
+                    const defaultDriverId = father ? father.id : (mother ? mother.id : '');
+                    
+                    if (defaultDriverId) selectedDrivers.set(car.id, defaultDriverId);
+                }
+
+                const driverId = selectedDrivers.get(car.id) || '';
+                const optionsHtml = driverOptions.map(p => `<option value="${p.id}" ${driverId === p.id ? 'selected' : ''}>${p.name}</option>`).join('');
+                
+                // 荷物ありの時の表示テキスト
+                const capText = hasLuggage ? `<span class="text-red-600 font-bold">定員2名 (荷物)</span>` : `定員 ${car.baseCapacity}名`;
+
                 const div = document.createElement('div');
                 div.className = `p-3 rounded border ${isChecked ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`;
-                div.innerHTML = `<div class="flex items-center justify-between"><div class="flex items-center"><input type="checkbox" id="c-${car.id}" data-id="${car.id}" class="car-check mr-2 h-5 w-5 text-blue-600 rounded" ${isChecked ? 'checked' : ''}><label for="c-${car.id}" class="font-bold text-gray-800 cursor-pointer">${car.name}</label></div><span class="text-xs text-gray-500">定員 ${car.baseCapacity}名</span></div><div class="mt-2 pl-7 space-y-2 ${isChecked ? '' : 'hidden'}" id="car-opt-${car.id}"><select data-car-id="${car.id}" class="driver-select w-full text-sm p-1 border rounded shadow-sm bg-white"><option value="">(ドライバー選択)</option>${options}</select><div class="flex items-center"><input type="checkbox" id="lug-${car.id}" data-car-id="${car.id}" class="luggage-check mr-2 text-blue-600 rounded" ${hasLuggage ? 'checked' : ''}><label for="lug-${car.id}" class="text-xs text-gray-700 select-none cursor-pointer">荷物あり (定員を2名に制限)</label></div></div>`;
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="c-${car.id}" data-id="${car.id}" class="car-check mr-2 h-5 w-5 text-blue-600 rounded" ${isChecked ? 'checked' : ''}>
+                            <label for="c-${car.id}" class="font-bold text-gray-800 cursor-pointer">${car.name}</label>
+                        </div>
+                        <span class="text-xs text-gray-500">${capText}</span>
+                    </div>
+                    <div class="mt-2 pl-7 space-y-2 ${isChecked ? '' : 'hidden'}" id="car-opt-${car.id}">
+                        <select data-car-id="${car.id}" class="driver-select w-full text-sm p-1 border rounded shadow-sm bg-white">
+                            <option value="">(ドライバー選択)</option>
+                            ${optionsHtml}
+                        </select>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="lug-${car.id}" data-car-id="${car.id}" class="luggage-check mr-2 text-blue-600 rounded" ${hasLuggage ? 'checked' : ''}>
+                            <label for="lug-${car.id}" class="text-xs text-gray-700 select-none cursor-pointer">荷物あり (定員を2名に制限)</label>
+                        </div>
+                    </div>
+                `;
                 els.carList.appendChild(div);
             });
         }
@@ -473,7 +502,6 @@
 
         function setupEventListeners() {
             els.participantList.addEventListener('click', e => {
-                // ボタンイベントは直接アタッチしたのでここでは処理しない
                 if (e.target.classList.contains('participant-check')) {
                     const id = e.target.dataset.id;
                     if (e.target.checked) selectedParticipantIds.add(id);
@@ -503,6 +531,7 @@
                 if (e.target.classList.contains('luggage-check')) {
                     const carId = e.target.dataset.carId;
                     if(e.target.checked) selectedLuggage.add(carId); else selectedLuggage.delete(carId);
+                    renderCarList(); // ★ 荷物変更時は定員表示を変えるために再描画
                     updateStatusCounter();
                 }
             });
@@ -607,7 +636,7 @@
             card.dataset.carId = car.id;
             
             const headerText = car.isExcluded ? '別便' : car.name;
-            const capText = car.isExcluded ? '∞' : `定員${car.baseCapacity}`;
+            const capText = car.isExcluded ? '∞' : (car.hasLuggage ? '定員2 (荷物)' : `定員${car.baseCapacity}`);
             
             const header = document.createElement('div');
             header.className = 'p-3 bg-slate-200 border-b flex justify-between items-center';
@@ -700,19 +729,17 @@
                 const car = currentAssignments.find(c => c.id === carId);
                 if (!car) return;
                 
-                // DOMからドライバーを取得して更新
                 const drZone = card.querySelector('.driver-dropzone');
                 const drLi = drZone ? drZone.querySelector('li') : null;
                 if (drLi) {
                     const pId = drLi.dataset.id;
                     car.driver = ALL_PARTICIPANTS_FLAT.find(p => p.id === pId);
-                    excludedParticipantIds.delete(pId); // 別便から移動してきた場合は削除
+                    excludedParticipantIds.delete(pId); 
                     drLi.className = drLi.className.replace('bg-white text-gray-800 border', 'bg-blue-600 text-white');
                 } else {
                     car.driver = null;
                 }
                 
-                // DOMからメンバーを取得して更新
                 const memList = card.querySelector('.members-dropzone');
                 const newMembers = [];
                 if(memList) {
@@ -721,7 +748,7 @@
                         const p = ALL_PARTICIPANTS_FLAT.find(x => x.id === pId);
                         if(p) {
                             newMembers.push(p);
-                            excludedParticipantIds.delete(pId); // 別便から移動してきた場合は削除
+                            excludedParticipantIds.delete(pId); 
                             li.className = li.className.replace('bg-blue-600 text-white', 'bg-white text-gray-800 border');
                         }
                     });
