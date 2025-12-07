@@ -5,8 +5,8 @@ import {
 import { Upload, Database, TrendingUp, Activity, Save, Trash2, Filter, AlertCircle, Award, Search, Calendar, RefreshCw, LineChart as LineChartIcon, BarChart2 } from 'lucide-react';
 
 // --- Default Data (Import from files) ---
-import DEFAULT_BATTING_CSV_URL from './data/scorer_stats_raw_b.csv';
-import DEFAULT_PITCHING_CSV_URL from './data/scorer_stats_raw_p.csv';
+import DEFAULT_BATTING_CSV_URL from './data/scorer_stats_raw_b.csv?url';
+import DEFAULT_PITCHING_CSV_URL from './data/scorer_stats_raw_p.csv?url';
 
 // --- Helper Functions ---
 
