@@ -14,7 +14,12 @@ const parseCSV = (text) => {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return [];
   
-  const headers = lines[0].split(',').map(h => h.trim());
+  let headerLine = lines[0];
+  // Remove BOM (Byte Order Mark) if it exists at the beginning of the file
+  if (headerLine.charCodeAt(0) === 0xFEFF) {
+      headerLine = headerLine.substring(1);
+  }
+  const headers = headerLine.split(',').map(h => h.trim());
   const result = [];
   
   for (let i = 1; i < lines.length; i++) {
@@ -40,8 +45,14 @@ const safeDiv = (a, b) => b === 0 ? 0 : a / b;
 
 const parseDate = (dateStr) => {
     if (!dateStr) return new Date(0);
-    const normalized = dateStr.replace(/\//g, '-');
-    return new Date(normalized);
+    // YYYY-MM-DD strings can be parsed as UTC, causing timezone issues.
+    // By splitting the string and using new Date(y, m-1, d), we force it to local time midnight.
+    const parts = dateStr.split(/[-/]/);
+    if (parts.length === 3) {
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+    // Fallback for any other format
+    return new Date(dateStr);
 };
 
 // --- Components ---
@@ -218,12 +229,19 @@ export default function App() {
 
   const filterData = (data) => {
     return data.filter(row => {
-        const rowDate = parseDate(row['日付']);
-        const start = filters.startDate ? new Date(filters.startDate) : null;
-        const end = filters.endDate ? new Date(filters.endDate) : null;
-        
+        const rowDate = parseDate(row['日付']); // Correctly parsed as local time midnight
+        let start = null;
+        if (filters.startDate) {
+            start = parseDate(filters.startDate); // Use the same robust parsing
+        }
+        let end = null;
+        if (filters.endDate) {
+            end = parseDate(filters.endDate);
+            end.setDate(end.getDate() + 1); // Get the very start of the next day
+        }
+
         if (start && rowDate < start) return false;
-        if (end && rowDate > end) return false;
+        if (end && rowDate >= end) return false;
 
         if (filters.teamKeyword) {
             const kw = filters.teamKeyword.toLowerCase();
@@ -292,7 +310,7 @@ export default function App() {
         isoD: Number(isoD.toFixed(3))
       };
     }).sort((a, b) => b.avg - a.avg);
-  }, [filteredBattingData]);
+  }, [filteredBattingData, filters]);
 
   const aggregatedPitching = useMemo(() => {
     const stats = {};
@@ -332,7 +350,7 @@ export default function App() {
         inningsVal: s.outs / 3
       };
     }).sort((a, b) => a.era - b.era);
-  }, [filteredPitchingData]);
+  }, [filteredPitchingData, filters]);
 
   const teamStats = useMemo(() => {
     if (filteredBattingData.length === 0) return null;
@@ -346,7 +364,7 @@ export default function App() {
     const totalOuts = aggregatedPitching.reduce((acc, cur) => acc + cur.outs, 0);
     const teamERA = safeDiv(totalER * 7, totalOuts / 3).toFixed(2);
     return { totalGames: gameIds.size, teamAvg, totalR, totalHR, teamERA };
-  }, [filteredBattingData, aggregatedBatting, aggregatedPitching]);
+  }, [filteredBattingData, aggregatedBatting, aggregatedPitching, filters]);
 
   const monthlyBattingTrend = useMemo(() => {
      if (filteredBattingData.length === 0) return [];
@@ -377,7 +395,7 @@ export default function App() {
            ops: Number((obp + slg).toFixed(3))
         };
      });
-  }, [filteredBattingData]);
+  }, [filteredBattingData, filters]);
 
   // Player Cumulative Trend Logic
   const playerBattingTrendData = useMemo(() => {
@@ -501,7 +519,7 @@ export default function App() {
           data.sort((a, b) => b.value - a.value);
       }
       return data;
-  }, [aggregatedBatting, aggregatedPitching, comparisonMetric, comparisonMinPA]);
+  }, [aggregatedBatting, aggregatedPitching, comparisonMetric, comparisonMinPA, filters]);
 
   const comparisonScatterData = useMemo(() => {
       // Assuming batting metrics mostly, but could mix if needed. Sticking to batting for scatter primarily.
@@ -513,7 +531,7 @@ export default function App() {
             y: p[scatterY],
             z: p.pa // size
         }));
-  }, [aggregatedBatting, comparisonMinPA, scatterX, scatterY]);
+  }, [aggregatedBatting, comparisonMinPA, scatterX, scatterY, filters]);
 
   // --- Render Sub-Components ---
 
@@ -795,7 +813,6 @@ export default function App() {
                                 <CartesianGrid />
                                 <XAxis type="number" dataKey="x" name={scatterX} unit="" domain={['auto', 'auto']} tickFormatter={(v)=> Number(v).toFixed(3)} label={{ value: metricOptions.find(m => m.v === scatterX)?.l, position: 'insideBottom', offset: -10 }} />
                                 <YAxis type="number" dataKey="y" name={scatterY} unit="" domain={['auto', 'auto']} tickFormatter={(v)=> Number(v).toFixed(3)} label={{ value: metricOptions.find(m => m.v === scatterY)?.l, angle: -90, position: 'insideLeft' }} />
-                                <RechartsTooltip cursor={{ strokeDasharray: '3 3' }} />
                                 <RechartsTooltip cursor={{ strokeDasharray: '3 3' }} content={({ active, payload }) => {
                                     if (active && payload && payload.length) {
                                         const data = payload[0].payload;
