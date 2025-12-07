@@ -45,14 +45,26 @@ const safeDiv = (a, b) => b === 0 ? 0 : a / b;
 
 const parseDate = (dateStr) => {
     if (!dateStr) return new Date(0);
-    // YYYY-MM-DD strings can be parsed as UTC, causing timezone issues.
-    // By splitting the string and using new Date(y, m-1, d), we force it to local time midnight.
     const parts = dateStr.split(/[-/]/);
     if (parts.length === 3) {
-        return new Date(parts[0], parts[1] - 1, parts[2]);
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+            // Create date and check if it's valid. Month is 0-indexed.
+            const d = new Date(year, month - 1, day);
+            if (!isNaN(d.getTime())) {
+                return d;
+            }
+        }
     }
-    // Fallback for any other format
-    return new Date(dateStr);
+    // Fallback for other formats or if parsing failed
+    const fallback = new Date(dateStr);
+    if (!isNaN(fallback.getTime())) {
+        return fallback;
+    }
+    // If all else fails, return a safe, known date instead of 'Invalid Date'
+    return new Date(0);
 };
 
 // --- Components ---
