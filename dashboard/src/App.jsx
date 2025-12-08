@@ -149,7 +149,7 @@ export default function App() {
     if (playerList.length > 0 && !selectedPlayerId) {
         setSelectedPlayerId(playerList[0].id);
     }
-  }, [playerList, selectedPlayerId]);
+  }, [playerList]);
 
   // Load data & Initialize Default Data
   useEffect(() => {
