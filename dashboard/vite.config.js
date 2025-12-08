@@ -3,6 +3,6 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: './', // 相対パスに変更
+//  base: './', // 相対パスに変更
   plugins: [react()],
 })
