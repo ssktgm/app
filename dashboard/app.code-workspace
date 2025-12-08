@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "ants_dashboard",
+			"path": "../../ants_dashboard"
+		}
+	],
+	"settings": {}
+}
