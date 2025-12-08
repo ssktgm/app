@@ -6,6 +6,10 @@
 		{
 			"name": "ants_dashboard",
 			"path": "../../ants_dashboard"
+		},
+		{
+			"name": "ants_dashboard-1",
+			"path": "../../ants_dashboard-1"
 		}
 	],
 	"settings": {}
